@@ -19,9 +19,13 @@
     cpu_clock_ghz: number | null; gpu_clock_mhz: number | null; power_watts: number | null;
     cpu_load_pct: number | null; gpu_load_pct: number | null;
     gpu_mem_used_mb: number | null; gpu_mem_total_mb: number | null;
-    gpu_fan_pct: number | null;
-    sys_mem_used_gb: number | null; sys_mem_total_gb: number | null;
-    sensors_available: boolean
+    fan_speed_pct: number | null; sys_mem_used_gb: number | null; sys_mem_total_gb: number | null;
+    sensors_available: boolean;
+  }
+  interface GameAnalysis {
+    title: string; status: string; expected_fps: string; score_vs_requirement: string;
+    min_score: number; rec_score: number; comfort_score: number;
+    notes: string; gpu_required: string; storage_gb: number; ray_tracing_required: boolean;
   }
   interface DeviceInfo {
     adapter_name: string; backend: string; device_type: string;
@@ -55,10 +59,20 @@
   // Show added score briefly, then fade
   let addTimer: ReturnType<typeof setTimeout> | null = null
   function flashAdded(score: number, name: string) {
-    lastAddedScore = score
-    lastAddedName = name
+    lastAddedScore = score; lastAddedName = name
     if (addTimer) clearTimeout(addTimer)
     addTimer = setTimeout(() => { lastAddedScore = 0; lastAddedName = '' }, 2500)
+  }
+
+  // Game analysis
+  let gameAnalysis = $state<GameAnalysis[] | null>(null)
+  let showGameAnalysis = $state(false)
+  async function loadGameAnalysis() {
+    if (!result) return
+    try {
+      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { result })
+      showGameAnalysis = true
+    } catch { showGameAnalysis = false }
   }
 
   // Leaderboard detail modal
@@ -262,6 +276,12 @@
       <button class="btn btn-primary" onclick={runBenchmark}>
         {@html svgs.play} Run All
       </button>
+      {#if result && !showGameAnalysis}
+        <button class="btn btn-outline" onclick={loadGameAnalysis}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px"><path d="M20 12l-8 8-8-8M20 6l-8 8-8-8"/></svg>
+          Game Analysis
+        </button>
+      {/if}
     {/if}
     <div class="select-mode">
       <button class="opt" class:active={precision === 'quick'} onclick={() => precision = 'quick'}>Quick</button>
@@ -413,13 +433,13 @@
               <span class="temp-val">{(thermal.gpu_mem_used_mb / 1024).toFixed(0)}GB</span>
             </div>
           {/if}
-          {#if thermal?.gpu_fan_pct != null}
+          {#if thermal?.fan_speed_pct != null}
             <div class="temp-row">
-              <span class="temp-label">{@html svgs.lightning} Fan</span>
+              <span class="temp-label">{@html svgs.cpu} Fan</span>
               <div class="temp-track">
-                <div class="temp-fill" style="width: {thermal.gpu_fan_pct}%"></div>
+                <div class="temp-fill" style="width: {thermal.fan_speed_pct}%"></div>
               </div>
-              <span class="temp-val">{thermal.gpu_fan_pct.toFixed(0)}%</span>
+              <span class="temp-val">{thermal.fan_speed_pct.toFixed(0)}%</span>
             </div>
           {/if}
           {#if thermal?.sys_mem_used_gb != null && thermal?.sys_mem_total_gb != null}
@@ -461,6 +481,29 @@
           {/if}
         </div>
       </div>
+
+      <!-- Game Analysis -->
+      {#if showGameAnalysis && gameAnalysis}
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M20 12l-8 8-8-8M20 6l-8 8-8-8"/></svg>
+              Game Analysis
+            </span>
+            <button class="btn btn-xs btn-outline" onclick={() => { showGameAnalysis = false; gameAnalysis = null }}>Close</button>
+          </div>
+          <div class="panel-body" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
+            {#each gameAnalysis as g}
+              <div class="game-entry" class:status-pass={g.status === '快適'} class:status-ok={g.status === '可'} class:status-limit={g.status === '限界'} class:status-no={g.status === '不可'}>
+                <div class="game-title">{g.title}</div>
+                <div class="game-status" class:game-pass={g.status === '快適'} class:game-ok={g.status === '可'} class:game-limit={g.status === '限界'} class:game-no={g.status === '不可'}>{g.status}</div>
+                <div class="game-fps">{g.expected_fps}</div>
+                <div class="game-notes">{g.notes}</div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       <!-- Stats Panel -->
       <StatsPanel {result} {history} {deleteRun} {formatScore} />
@@ -628,6 +671,25 @@
   .panel-badge.green { color: var(--green); background: rgba(52,211,153,0.1); }
   .panel-badge.yellow { color: var(--yellow); background: rgba(251,191,36,0.1); }
   .panel-body { padding: 10px 14px 14px; flex: 1; }
+
+  /* Game Analysis */
+  .game-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 5px; background: var(--bg-primary);
+    border: 1px solid var(--border); font-size: 11px;
+  }
+  .game-entry.status-pass { border-left: 3px solid var(--green); }
+  .game-entry.status-ok { border-left: 3px solid var(--accent); }
+  .game-entry.status-limit { border-left: 3px solid var(--yellow); }
+  .game-entry.status-no { border-left: 3px solid var(--red); }
+  .game-title { flex: 1; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-status { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+  .game-pass { color: var(--green); background: rgba(34,197,94,0.1); }
+  .game-ok { color: var(--accent); background: rgba(129,140,248,0.1); }
+  .game-limit { color: var(--yellow); background: rgba(245,158,11,0.1); }
+  .game-no { color: var(--red); background: rgba(239,68,68,0.1); }
+  .game-fps { font-size: 10px; color: var(--text-muted); min-width: 60px; text-align: right; }
+  .game-notes { font-size: 9px; color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Module list */
   .module-list { display: flex; flex-direction: column; gap: 3px; }

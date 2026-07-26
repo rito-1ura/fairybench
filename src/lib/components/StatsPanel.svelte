@@ -46,8 +46,8 @@
   async function loadCompareDetails() {
     try {
       const [a, b] = await Promise.all([
-        invoke<RunResult|null>('get_run_detail', { runId: selectedRuns[0].run_id }),
-        invoke<RunResult|null>('get_run_detail', { runId: selectedRuns[1].run_id }),
+        invoke<RunResult|null>('get_run_detail', { run_id: selectedRuns[0].run_id }),
+        invoke<RunResult|null>('get_run_detail', { run_id: selectedRuns[1].run_id }),
       ])
       compareDetail = [a, b]
     } catch {}
