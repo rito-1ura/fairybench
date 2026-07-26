@@ -23,9 +23,10 @@
     sensors_available: boolean;
   }
   interface GameAnalysis {
-    title: string; status: string; expected_fps: string; score_vs_requirement: string;
-    min_score: number; rec_score: number; comfort_score: number;
-    notes: string; gpu_required: string; storage_gb: number; ray_tracing_required: boolean;
+    title: string; category: string; status: string; status_jp: string;
+    fps_est: string; score_pct: number; min_score: number; rec_score: number;
+    gpu_min: string; gpu_rec: string; storage_gb: number; has_raytracing: boolean;
+    details: string[];
   }
   interface DeviceInfo {
     adapter_name: string; backend: string; device_type: string;
@@ -142,18 +143,16 @@
     scoreAnimTimers = []
   }
 
-  // Simple score counter animation using requestAnimationFrame
-  function animateScore(target: number, cb: (v: number) => void) {
+  // Score counter animation (count-up effect)
+  const SCORE_ANIM_DURATION = 600
+  function animateScore(from: number, to: number, cb: (v: number) => void) {
     if (destroyed) return
-    const duration = 600
     const start = performance.now()
     const id = setInterval(() => {
       const elapsed = performance.now() - start
-      const pct = Math.min(1, elapsed / duration)
-      cb(target * pct)
-      if (pct >= 1) {
-        clearInterval(id)
-      }
+      const pct = Math.min(1, elapsed / SCORE_ANIM_DURATION)
+      cb(from + (to - from) * pct)
+      if (pct >= 1) clearInterval(id)
     }, 16)
     scoreAnimTimers = [...scoreAnimTimers, id]
   }
@@ -179,9 +178,9 @@
         const entry = { name: data.module, score: data.score, label: data.label }
         completedModules = [...completedModules, entry]
         const oldScore = currentRunScore
-        currentRunScore += data.score
+        const newScore = currentRunScore + data.score
+        animateScore(oldScore, newScore, (v) => { if (!destroyed) currentRunScore = v })
         flashAdded(data.score, data.module)
-        // Score addition — flash the added value
       } else if (data.phase === 'pulse') {
         // Real-time module progress — update elapsed time display
         currentModule = data.module + ' (' + data.label + ')'
@@ -494,11 +493,11 @@
           </div>
           <div class="panel-body" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             {#each gameAnalysis as g}
-              <div class="game-entry" class:status-pass={g.status === '快適'} class:status-ok={g.status === '可'} class:status-limit={g.status === '限界'} class:status-no={g.status === '不可'}>
+              <div class="game-entry" class:status-pass={g.status_jp === '快適'} class:status-ok={g.status_jp === '可'} class:status-limit={g.status_jp === '限界'} class:status-no={g.status_jp === '不可'}>
                 <div class="game-title">{g.title}</div>
-                <div class="game-status" class:game-pass={g.status === '快適'} class:game-ok={g.status === '可'} class:game-limit={g.status === '限界'} class:game-no={g.status === '不可'}>{g.status}</div>
-                <div class="game-fps">{g.expected_fps}</div>
-                <div class="game-notes">{g.notes}</div>
+                <div class="game-status" class:game-pass={g.status_jp === '快適'} class:game-ok={g.status_jp === '可'} class:game-limit={g.status_jp === '限界'} class:game-no={g.status_jp === '不可'}>{g.status_jp}</div>
+                <div class="game-fps">{g.fps_est}</div>
+                <div class="game-notes">{g.details[0] || ''}</div>
               </div>
             {/each}
           </div>
