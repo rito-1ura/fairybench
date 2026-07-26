@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FairyBench — Desktop Benchmark Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Figtree', 'Segoe UI', sans-serif;
+  background: #0C0C0F;
+  color: #E8E8EE;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+.container { max-width: 800px; margin: 0 auto; padding: 60px 24px; }
+.hero { text-align: center; padding: 60px 0 40px; }
+.logo {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, #818CF8, #6366F1);
+  border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; color: #0C0C0F;
+}
+h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+.gradient-text {
+  background: linear-gradient(135deg, #818CF8, #A78BFA, #F0F0F8, #818CF8);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shift 4s ease infinite;
+}
+@keyframes shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+.subtitle { font-size: 16px; color: #88889A; margin-top: 12px; }
+.badges { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+.badge {
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  border: 1px solid #2A2A35; color: #88889A;
+}
+.features { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 48px 0; }
+.card {
+  background: #16161A; border: 1px solid #2A2A35; border-radius: 12px;
+  padding: 24px; transition: border-color 0.2s;
+}
+.card:hover { border-color: #818CF8; }
+.card-icon { font-size: 24px; margin-bottom: 8px; }
+.card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.card p { font-size: 12px; color: #88889A; }
+.download {
+  display: block; width: 240px; margin: 48px auto;
+  padding: 16px 0; background: #818CF8; color: #0C0C0F;
+  text-align: center; border-radius: 10px; font-weight: 700; text-decoration: none;
+  font-size: 15px; transition: all 0.2s;
+}
+.download:hover { background: #939BFF; box-shadow: 0 0 24px rgba(129,140,248,0.3); }
+.specs { margin-top: 48px; }
+.specs h2 { font-size: 14px; font-weight: 600; color: #5A5A6A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.spec-item { display: flex; justify-content: space-between; padding: 8px 12px; background: #16161A; border-radius: 6px; font-size: 12px; }
+.spec-item span:first-child { color: #5A5A6A; }
+.spec-item span:last-child { color: #E8E8EE; font-weight: 500; }
+footer { text-align: center; padding: 32px 0; color: #5A5A6A; font-size: 11px; }
+@media (max-width: 640px) { .features { grid-template-columns: 1fr; } h1 { font-size: 28px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <div class="logo">F</div>
+    <h1 class="gradient-text">FairyBench</h1>
+    <p class="subtitle">GPU / CPU / Memory / Storage / AI — 総合デスクトップベンチマーク</p>
+    <div class="badges">
+      <span class="badge">Tauri 2 + wgpu</span>
+      <span class="badge">Svelte 5</span>
+      <span class="badge">Rust</span>
+      <span class="badge">Windows</span>
+    </div>
+  </div>
+  <div class="features">
+    <div class="card">
+      <div class="card-icon">🖥</div>
+      <h3>GPU レンダリング</h3>
+      <p>wgpu ベースのラスタライズ、パストレーシング、3Dシーンレンダリングで実GPU性能を測定</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧠</div>
+      <h3>AI 推論・生成</h3>
+      <p>CPU 行列乗算・テキスト生成シミュレーションでAIワークロード性能を評価</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💾</div>
+      <h3>ストレージ・メモリ</h3>
+      <p>シーケンシャルR/W、ランダム4K IOPS、STREAMベンチマーク相当のメモリ帯域測定</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎮</div>
+      <h3>AAA ゲーム解析</h3>
+      <p>22タイトルのシステム要件とベンチスコアを比較。予想FPS・快適度を自動判定</p>
+    </div>
+  </div>
+  <a class="download" href="https://github.com/ritoura/fairybench/releases" target="_blank">Download FairyBench</a>
+  <div class="specs">
+    <h2>Technical Details</h2>
+    <div class="spec-grid">
+      <div class="spec-item"><span>Backend</span><span>Rust + wgpu 0.23</span></div>
+      <div class="spec-item"><span>Frontend</span><span>Svelte 5 + TypeScript</span></div>
+      <div class="spec-item"><span>Framework</span><span>Tauri 2.x</span></div>
+      <div class="spec-item"><span>API</span><span>DirectX 12 / Vulkan / Metal</span></div>
+      <div class="spec-item"><span>Database</span><span>SQLite (rusqlite)</span></div>
+      <div class="spec-item"><span>Score</span><span>FairyScore (95% CI + IQR)</span></div>
+      <div class="spec-item"><span>System req.</span><span>Windows 10+, NVIDIA/AMD/Intel GPU</span></div>
+      <div class="spec-item"><span>License</span><span>MIT</span></div>
+    </div>
+  </div>
+  <footer>
+    <p>FairyBench © 2026 — Built with Tauri, Rust, Svelte</p>
+  </footer>
+</div>
+</body>
+</html>
