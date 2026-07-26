@@ -1,5 +1,4 @@
 mod db;
-mod games;
 mod orchestrator;
 mod plugin;
 mod stats;
@@ -215,23 +214,7 @@ fn get_plugin_info(state: State<AppState>) -> Vec<plugin::PluginManifest> {
     host.loaded_plugins.clone()
 }
 
-/// AAAゲーム要件解析
-#[tauri::command]
-fn analyze_games(overall_raw: f64) -> Vec<games::GameAnalysis> {
-    let user_memory_gb = std::process::Command::new("wmic")
-        .args(["computersystem", "get", "TotalPhysicalMemory"])
-        .output().ok()
-        .and_then(|o| {
-            if !o.status.success() { return None; }
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            stdout.lines().nth(1)
-                .and_then(|l| l.trim().parse::<f64>().ok())
-                .map(|b| b / (1024.0 * 1024.0 * 1024.0))
-        }).unwrap_or(16.0);
-    games::analyze_games(overall_raw, user_memory_gb)
-}
-
-/// 個別実行結果の詳細を取得
+// ===== Logging Setup =====
 #[tauri::command]
 fn get_run_detail(state: State<AppState>, run_id: String) -> Result<Option<stats::RunResult>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
@@ -298,7 +281,6 @@ pub fn run() {
             delete_result,
             get_thermal_snapshot,
             get_plugin_info,
-            analyze_games,
             get_run_detail,
         ])
         .run(tauri::generate_context!())

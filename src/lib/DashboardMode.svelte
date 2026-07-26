@@ -65,18 +65,62 @@
     addTimer = setTimeout(() => { lastAddedScore = 0; lastAddedName = '' }, 2500)
   }
 
-  // Game analysis
-  let gameAnalysis = $state<GameAnalysis[] | null>(null)
+  // Game analysis — frontend-side, no Rust invoke needed
+  const GAMES = [
+    { title:"Cyberpunk 2077", category:"AAA", min:8_000_000, rec:25_000_000, mem:32, gpu_min:"GTX 1060", gpu_rec:"RTX 3070", rt:true, storage:70 },
+    { title:"Baldur's Gate 3", category:"AAA", min:6_000_000, rec:18_000_000, mem:16, gpu_min:"GTX 970", gpu_rec:"RTX 2060 Super", storage:150 },
+    { title:"Elden Ring", category:"AAA", min:5_000_000, rec:15_000_000, mem:16, gpu_min:"GTX 1060", gpu_rec:"RTX 2070", storage:60 },
+    { title:"Alan Wake 2", category:"AAA", min:10_000_000, rec:28_000_000, mem:32, gpu_min:"RTX 2060", gpu_rec:"RTX 4070", rt:true, storage:90 },
+    { title:"Starfield", category:"AAA", min:7_000_000, rec:20_000_000, mem:32, gpu_min:"GTX 1070", gpu_rec:"RTX 2080", storage:125 },
+    { title:"Black Myth: Wukong", category:"AAA", min:9_000_000, rec:26_000_000, mem:32, gpu_min:"RTX 2060", gpu_rec:"RTX 4080", rt:true, storage:130 },
+    { title:"Call of Duty: MW III", category:"AAA", min:5_000_000, rec:16_000_000, mem:16, gpu_min:"GTX 1060", gpu_rec:"RTX 3060", rt:true, storage:150 },
+    { title:"Hogwarts Legacy", category:"AAA", min:6_000_000, rec:18_000_000, mem:32, gpu_min:"GTX 960", gpu_rec:"RTX 2080", rt:true, storage:85 },
+    { title:"The Last of Us Part I", category:"AAA", min:8_000_000, rec:22_000_000, mem:32, gpu_min:"GTX 1060", gpu_rec:"RTX 3060", storage:100 },
+    { title:"God of War Ragnarok", category:"AAA", min:6_000_000, rec:18_000_000, mem:16, gpu_min:"GTX 1060", gpu_rec:"RTX 2070", storage:80 },
+    { title:"Final Fantasy XVI", category:"AAA", min:8_000_000, rec:24_000_000, mem:32, gpu_min:"GTX 1070", gpu_rec:"RTX 3080", storage:100 },
+    { title:"Tekken 8", category:"AAA", min:4_000_000, rec:12_000_000, mem:16, gpu_min:"GTX 1050", gpu_rec:"RTX 2060", storage:60 },
+    { title:"Helldivers 2", category:"AAA", min:5_000_000, rec:15_000_000, mem:16, gpu_min:"GTX 1060", gpu_rec:"RTX 2070", storage:70 },
+    { title:"MS Flight Sim 2024", category:"Simulation", min:10_000_000, rec:30_000_000, mem:32, gpu_min:"RTX 2060", gpu_rec:"RTX 4080", rt:true, storage:150 },
+    { title:"Cities: Skylines II", category:"Simulation", min:5_000_000, rec:20_000_000, mem:32, gpu_min:"GTX 970", gpu_rec:"RTX 3080", storage:60 },
+    { title:"Fortnite", category:"eSports", min:2_000_000, rec:10_000_000, mem:16, gpu_min:"Intel UHD", gpu_rec:"RTX 2060", rt:true, storage:40 },
+    { title:"Valorant", category:"eSports", min:500_000, rec:5_000_000, mem:8, gpu_min:"Intel HD", gpu_rec:"GTX 1050", storage:30 },
+    { title:"Apex Legends", category:"eSports", min:2_000_000, rec:8_000_000, mem:12, gpu_min:"GTX 660", gpu_rec:"GTX 1060", storage:60 },
+    { title:"Overwatch 2", category:"eSports", min:1_500_000, rec:7_000_000, mem:12, gpu_min:"GTX 600", gpu_rec:"GTX 1060", storage:50 },
+    { title:"Hades II", category:"Indie", min:1_000_000, rec:4_000_000, mem:16, gpu_min:"GTX 950", gpu_rec:"GTX 1060", storage:20 },
+    { title:"Elden Ring: Nightreign", category:"AAA", min:6_000_000, rec:18_000_000, mem:16, gpu_min:"GTX 1060", gpu_rec:"RTX 2070", storage:60 },
+    { title:"Avowed", category:"AAA", min:8_000_000, rec:24_000_000, mem:32, gpu_min:"RTX 2060", gpu_rec:"RTX 4070", rt:true, storage:100 },
+  ]
+  let gameAnalysis = $state<{title:string;status_jp:string;fps_est:string;notes:string}[]|null>(null)
   let showGameAnalysis = $state(false)
-  async function loadGameAnalysis() {
+  function loadGameAnalysis() {
     if (!result) return
-    try {
-      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { overall_raw: result.overall_raw })
-      showGameAnalysis = true
-    } catch (e) {
-      console.error('Game Analysis failed:', e)
-      showGameAnalysis = false
-    }
+    const score = result.overall_raw
+    const analysis = GAMES.map(g => {
+      const pct = g.rec > 0 ? Math.min(200, score / g.rec * 100) : 0
+      let status_jp: string, fps_est: string, notes: string
+      if (score >= g.rec) {
+        const fps = pct >= 150 ? '90-144 FPS' : pct >= 120 ? '60-90 FPS' : '60+ FPS'
+        status_jp = '快適'; fps_est = fps
+        notes = `${pct.toFixed(0)}% of recommended`
+      } else if (score >= g.min) {
+        const fps = pct >= 80 ? '45-60 FPS' : '30-45 FPS'
+        status_jp = '可'; fps_est = fps
+        notes = `${pct.toFixed(0)}% of recommended`
+      } else if (score >= g.min * 0.7) {
+        status_jp = '限界'; fps_est = 'Below 30 FPS'
+        notes = `${(score / g.min * 100).toFixed(0)}% of minimum`
+      } else {
+        status_jp = '不可'; fps_est = '—'
+        notes = `${(score / Math.max(g.min,1) * 100).toFixed(0)}% of minimum`
+      }
+      if (g.rt && status_jp === '快適') notes += ' · RT possible'
+      else if (g.rt && status_jp === '可') notes += ' · RT not recommended'
+      else if (g.rt) notes += ' · RT unavailable'
+      notes += ` · ${g.storage}GB`
+      return { title: g.title, status_jp, fps_est, notes }
+    })
+    gameAnalysis = analysis
+    showGameAnalysis = true
   }
 
   // Leaderboard detail modal
@@ -500,7 +544,7 @@
                 <div class="game-title">{g.title}</div>
                 <div class="game-status" class:game-pass={g.status_jp === '快適'} class:game-ok={g.status_jp === '可'} class:game-limit={g.status_jp === '限界'} class:game-no={g.status_jp === '不可'}>{g.status_jp}</div>
                 <div class="game-fps">{g.fps_est}</div>
-                <div class="game-notes">{g.details[0] || ''}</div>
+                <div class="game-notes">{g.notes}</div>
               </div>
             {/each}
           </div>
