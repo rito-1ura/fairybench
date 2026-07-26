@@ -282,6 +282,16 @@ pub fn run() {
                 thermal_monitor: Mutex::new(thermal::ThermalMonitor::new()),
                 plugin_host: Mutex::new(plugin::PluginHost::new()),
             });
+
+            // Set window icon programmatically
+            if let Some(window) = app.get_webview_window("main") {
+                if let Ok(img) = tauri::image::Image::from_bytes(include_bytes!("../icons/icon.ico")) {
+                    let _ = window.set_icon(img);
+                    log::info!("Window icon set successfully");
+                } else {
+                    log::warn!("Failed to load icon file");
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
