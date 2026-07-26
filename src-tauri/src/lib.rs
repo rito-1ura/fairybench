@@ -217,11 +217,7 @@ fn get_plugin_info(state: State<AppState>) -> Vec<plugin::PluginManifest> {
 
 /// AAAゲーム要件解析
 #[tauri::command]
-fn analyze_games(state: State<AppState>, run_id: String) -> Result<Vec<games::GameAnalysis>, String> {
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let result = db.get_run_detail(&run_id).map_err(|e| e.to_string())?;
-    let result = result.ok_or_else(|| "Run not found".to_string())?;
-    let user_score = result.overall_raw;
+fn analyze_games(overall_raw: f64) -> Vec<games::GameAnalysis> {
     let user_memory_gb = std::process::Command::new("wmic")
         .args(["computersystem", "get", "TotalPhysicalMemory"])
         .output().ok()
@@ -232,7 +228,7 @@ fn analyze_games(state: State<AppState>, run_id: String) -> Result<Vec<games::Ga
                 .and_then(|l| l.trim().parse::<f64>().ok())
                 .map(|b| b / (1024.0 * 1024.0 * 1024.0))
         }).unwrap_or(16.0);
-    Ok(games::analyze_games(user_score, user_memory_gb))
+    games::analyze_games(overall_raw, user_memory_gb)
 }
 
 /// 個別実行結果の詳細を取得

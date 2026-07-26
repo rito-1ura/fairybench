@@ -71,9 +71,12 @@
   async function loadGameAnalysis() {
     if (!result) return
     try {
-      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { run_id: result.run_id })
+      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { overall_raw: result.overall_raw })
       showGameAnalysis = true
-    } catch { showGameAnalysis = false }
+    } catch (e) {
+      console.error('Game Analysis failed:', e)
+      showGameAnalysis = false
+    }
   }
 
   // Leaderboard detail modal
