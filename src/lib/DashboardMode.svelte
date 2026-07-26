@@ -49,6 +49,17 @@
   let currentRunScore = $state(0)
   let scoreAnimTimers: ReturnType<typeof setInterval>[] = []
   let destroyed = false
+  let lastAddedScore = $state(0)
+  let lastAddedName = $state('')
+
+  // Show added score briefly, then fade
+  let addTimer: ReturnType<typeof setTimeout> | null = null
+  function flashAdded(score: number, name: string) {
+    lastAddedScore = score
+    lastAddedName = name
+    if (addTimer) clearTimeout(addTimer)
+    addTimer = setTimeout(() => { lastAddedScore = 0; lastAddedName = '' }, 2500)
+  }
 
   // Leaderboard detail modal
   let detailResult = $state<RunResult | null>(null)
@@ -153,11 +164,10 @@
       } else if (data.phase === 'complete') {
         const entry = { name: data.module, score: data.score, label: data.label }
         completedModules = [...completedModules, entry]
+        const oldScore = currentRunScore
         currentRunScore += data.score
-        // Score animation for the score panel
-        if (data.score > 0) {
-          animateScore(currentRunScore, (v) => { if (!destroyed) currentRunScore = v })
-        }
+        flashAdded(data.score, data.module)
+        // Score addition — flash the added value
       } else if (data.phase === 'pulse') {
         // Real-time module progress — update elapsed time display
         currentModule = data.module + ' (' + data.label + ')'
@@ -433,6 +443,9 @@
         <div class="panel-body score-panel-body">
           {#if result || running}
             <div class="score-big gradient-text">{formatScore(currentRunScore)}</div>
+            {#if lastAddedScore > 0}
+              <div class="score-added">+{formatShort(lastAddedScore)} <span class="score-added-name">{lastAddedName}</span></div>
+            {/if}
             {#if result}
               <div class="score-ci">95% CI: {formatScore(result.ci_lower)} – {formatScore(result.ci_upper)}</div>
               <div class="score-meta">
@@ -685,6 +698,19 @@
     font-size: 36px; font-weight: 200; color: var(--accent);
     font-variant-numeric: tabular-nums;
     transition: all 0.3s;
+  }
+  .score-added {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 4px; font-size: 13px; font-weight: 500;
+    color: var(--green);
+    animation: fadeInAdded 0.4s ease both;
+  }
+  .score-added-name {
+    font-size: 10px; color: var(--text-muted); font-weight: 400;
+  }
+  @keyframes fadeInAdded {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .score-ci { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
   .score-meta { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: var(--text-muted); }

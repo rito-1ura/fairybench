@@ -1,7 +1,11 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core'
+  import { listen } from '@tauri-apps/api/event'
 
   interface SubScore { module_name: string; raw_score: number; normalized_score: number }
+  interface ModuleProgress {
+    module: string; score: number; label: string; duration_ms: number; phase: string
+  }
   interface RunResult {
     run_id: string; overall_raw: number; ci_lower: number; ci_upper: number;
     cv: number; runs_used: number; runs_excluded: number;
@@ -23,6 +27,17 @@
   let progress = $state(0)
   let thermal = $state<ThermalSample | null>(null)
   let thermalInt: ReturnType<typeof setInterval> | null = null
+  let currentRunScore = $state(0)
+  let lastAddedScore = $state(0)
+  let lastAddedName = $state('')
+  let addTimer: ReturnType<typeof setTimeout> | null = null
+  let unlisten: (() => void) | null = null
+
+  function flashAdded(score: number, name: string) {
+    lastAddedScore = score; lastAddedName = name
+    if (addTimer) clearTimeout(addTimer)
+    addTimer = setTimeout(() => { lastAddedScore = 0; lastAddedName = '' }, 2500)
+  }
 
   const modules = [
     'Render-Raster', 'Render-PathTrace', 'Render-Procedural',
@@ -60,11 +75,32 @@
   }
 
   const formatScore = (v: number): string => v.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  const formatShort = (v: number): string => {
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M'
+    if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'
+    return v.toFixed(1)
+  }
 
   async function runBenchmark() {
     running = true
     result = null
+    currentRunScore = 0
     progress = 0
+    currentModule = 'Starting...'
+
+    // Listen for streaming events
+    unlisten = await listen<ModuleProgress>('benchmark-event', (event) => {
+      const data = event.payload
+      if (data.phase === 'start') {
+        currentModule = data.module
+      } else if (data.phase === 'complete') {
+        currentRunScore += data.score
+        flashAdded(data.score, data.module)
+      } else if (data.phase === 'pulse') {
+        currentModule = data.module + ' (' + data.label + ')'
+      }
+    })
 
     // Start thermal polling
     thermalInt = setInterval(async () => {
@@ -74,6 +110,7 @@
     try {
       const res = await invoke<RunResult>('run_benchmark')
       result = res
+      currentRunScore = res.overall_raw
       progress = 100
     } catch (e) {
       console.error('Benchmark failed:', e)
@@ -81,6 +118,7 @@
     running = false
     currentModule = ''
     if (thermalInt) { clearInterval(thermalInt); thermalInt = null }
+    if (unlisten) { unlisten(); unlisten = null }
   }
 </script>
 
@@ -109,8 +147,11 @@
   <div class="score-hero">
     <div class="score-label">FairyScore</div>
     <div class="score-value gradient-text">
-      {result ? formatScore(result.overall_raw) : '—'}
+      {result || running ? formatScore(currentRunScore) : '—'}
     </div>
+    {#if lastAddedScore > 0}
+      <div class="score-added">+{formatShort(lastAddedScore)} <span class="score-added-name">{lastAddedName}</span></div>
+    {/if}
     {#if result}
       <div class="ci-bar-container">
         <div class="ci-track">
@@ -212,6 +253,16 @@
   .score-value {
     font-size: 72px; font-weight: 300; line-height: 1; letter-spacing: -3px;
     color: #F0F0F8; margin-bottom: 14px;
+  }
+  .score-added {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 14px; font-weight: 500; color: var(--green);
+    animation: fadeInAdded 0.4s ease both; margin-bottom: 8px;
+  }
+  .score-added-name { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  @keyframes fadeInAdded {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .ci-bar-container { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px; }
   .ci-track { width: 180px; height: 4px; background: var(--bg-tertiary); border-radius: 2px; position: relative; }

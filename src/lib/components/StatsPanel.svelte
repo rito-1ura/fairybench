@@ -139,8 +139,8 @@
                     width={Math.max(3, chartWidth / chartData().length - 4)}
                     height={item.score * chartHeight * 0.85}
                     rx="2" ry="2"
+                    role="presentation"
                     fill="var(--accent)" fill-opacity="0.5"
-                    onmouseenter={() => {}}
               />
             {/each}
             <!-- Line overlay -->
