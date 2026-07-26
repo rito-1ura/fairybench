@@ -70,7 +70,7 @@
   async function loadGameAnalysis() {
     if (!result) return
     try {
-      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { result })
+      gameAnalysis = await invoke<GameAnalysis[]>('analyze_games', { run_id: result.run_id })
       showGameAnalysis = true
     } catch { showGameAnalysis = false }
   }
