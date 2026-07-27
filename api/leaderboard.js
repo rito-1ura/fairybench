@@ -1,96 +1,49 @@
 // Online Leaderboard API for FairyBench
-// Deploy on Vercel: `vercel deploy`
-// Requires: Vercel KV store (optional, falls back to in-memory)
+// Vercel Serverless Function (Node.js)
 
 const KV_PREFIX = 'fairybench_lb_'
+let inMemoryStore = []
 
-let inMemoryStore: Entry[] | null = null
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
-interface Entry {
-  score: number;
-  run_id: string;
-  cpu_name: string;
-  gpu_name: string;
-  memory_gb: number;
-  timestamp: string;
-  version: string;
-}
-
-// Attempt to use Vercel KV
-async function getKv(): Promise<any | null> {
-  try {
-    const { kv } = await import('@vercel/kv')
-    return kv
-  } catch {
-    return null
-  }
-}
-
-async function getEntries(): Promise<Entry[]> {
-  const kv = await getKv()
-  if (kv) {
-    const data = await kv.get<Entry[]>(KV_PREFIX + 'entries')
-    return data || []
-  }
-  return inMemoryStore || []
-}
-
-async function setEntries(entries: Entry[]): Promise<void> {
-  const kv = await getKv()
-  if (kv) {
-    await kv.set(KV_PREFIX + 'entries', entries)
-    return
-  }
-  inMemoryStore = entries
-}
-
-export default async function handler(req: Request): Promise<Response> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers })
-  }
+  if (req.method === 'OPTIONS') return res.status(204).end()
 
   try {
+    let entries = inMemoryStore
+
     if (req.method === 'GET') {
-      const url = new URL(req.url)
-      const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
-      const entries = await getEntries()
-      const sorted = entries.sort((a, b) => b.score - a.score).slice(0, limit)
-      return new Response(JSON.stringify({ ok: true, entries: sorted, total: entries.length }), { headers })
+      const limit = Math.min(parseInt(req.query.limit || '50'), 100)
+      const sorted = [...entries].sort((a, b) => b.score - a.score).slice(0, limit)
+      return res.status(200).json({ ok: true, entries: sorted, total: entries.length })
     }
 
     if (req.method === 'POST') {
-      const body = await req.json()
-      if (!body.score || !body.run_id) {
-        return new Response(JSON.stringify({ ok: false, error: 'score and run_id required' }), { status: 400, headers })
+      const { score, run_id, cpu_name, gpu_name, memory_gb, version } = req.body
+      if (!score || !run_id) {
+        return res.status(400).json({ ok: false, error: 'score and run_id required' })
       }
 
-      const entry: Entry = {
-        score: body.score,
-        run_id: body.run_id,
-        cpu_name: body.cpu_name || '',
-        gpu_name: body.gpu_name || '',
-        memory_gb: body.memory_gb || 0,
+      const entry = {
+        score, run_id,
+        cpu_name: cpu_name || '',
+        gpu_name: gpu_name || '',
+        memory_gb: memory_gb || 0,
         timestamp: new Date().toISOString(),
-        version: body.version || '0.0.0',
+        version: version || '0.0.0',
       }
 
-      const entries = await getEntries()
       entries.push(entry)
-      await setEntries(entries)
+      inMemoryStore = entries
 
       const rank = entries.filter(e => e.score > entry.score).length + 1
-      return new Response(JSON.stringify({ ok: true, rank, total: entries.length }), { headers })
+      return res.status(200).json({ ok: true, rank, total: entries.length })
     }
 
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), { status: 405, headers })
+    return res.status(405).json({ ok: false, error: 'Method not allowed' })
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 500, headers })
+    return res.status(500).json({ ok: false, error: String(err) })
   }
 }
