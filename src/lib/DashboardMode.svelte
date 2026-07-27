@@ -748,28 +748,28 @@
 
   /* Game Analysis */
   .game-entry {
-    display: grid; grid-template-columns: 1fr 48px 72px 1fr; gap: 6px;
-    align-items: center; padding: 6px 8px; border-radius: 5px;
+    display: grid; grid-template-columns: 1fr auto auto 1fr; gap: 8px;
+    align-items: center; padding: 8px 10px; border-radius: 5px;
     background: var(--bg-primary); border: 1px solid var(--border); font-size: 11px;
-    min-width: 0; overflow: hidden;
+    line-height: 1.5;
   }
   .game-entry.status-pass { border-left: 3px solid var(--green); }
   .game-entry.status-ok { border-left: 3px solid var(--accent); }
   .game-entry.status-limit { border-left: 3px solid var(--yellow); }
   .game-entry.status-no { border-left: 3px solid var(--red); }
-  .game-title { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .game-status { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; text-align: center; }
+  .game-title { font-weight: 600; color: var(--text-primary); word-break: break-word; min-width: 0; }
+  .game-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-align: center; white-space: nowrap; }
   .game-pass { color: var(--green); background: rgba(34,197,94,0.1); }
   .game-ok { color: var(--accent); background: rgba(129,140,248,0.1); }
   .game-limit { color: var(--yellow); background: rgba(245,158,11,0.1); }
   .game-no { color: var(--red); background: rgba(239,68,68,0.1); }
-  .game-fps { font-size: 10px; color: var(--text-muted); text-align: right; white-space: nowrap; }
-  .game-notes { font-size: 9px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .game-fps { font-size: 10px; color: var(--text-muted); text-align: right; white-space: nowrap; min-width: fit-content; }
+  .game-notes { font-size: 10px; color: var(--text-muted); word-break: break-word; min-width: 0; }
 
   /* Modal overlay — shared with detail modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; }
   .modal-content { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; min-width: 280px; max-width: 90vw; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
-  .game-modal { width: min(520px, 90vw); max-height: 75vh; }
+  .game-modal { width: min(560px, 92vw); max-height: 80vh; }
 
   /* Module list */
   .module-list { display: flex; flex-direction: column; gap: 3px; }
