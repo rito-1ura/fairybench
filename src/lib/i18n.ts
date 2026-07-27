@@ -119,10 +119,17 @@ export function formatScore(v: number, lang?: Lang): string {
   if (l === 'en') return v.toLocaleString('en-US')
   if (l === 'ja') {
     const abs = Math.abs(v)
-    if (abs >= 1e8) return (v / 1e8).toFixed(2) + '億'
-    if (abs >= 1e7) return (v / 1e7).toFixed(1) + '千万'
-    if (abs >= 1e4) return (v / 1e4).toFixed(1) + '万'
-    return v.toLocaleString('ja-JP')
+    const sign = v < 0 ? '-' : ''
+    const n = Math.floor(abs)
+    const oku = Math.floor(n / 100_000_000)
+    const man = Math.floor((n % 100_000_000) / 10_000)
+    const rem = n % 10_000
+    let result = ''
+    if (oku > 0) result += oku + '億'
+    if (man > 0) result += man + '万'
+    if (rem > 0 || (oku === 0 && man === 0)) result += String(rem)
+    if (result === '') result = '0'
+    return sign + result
   }
   return v.toLocaleString()
 }
