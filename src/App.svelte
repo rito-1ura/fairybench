@@ -93,15 +93,15 @@
     <p class="sec-sub">Six meticulously measured dimensions. Real results, not synthetic estimates.</p>
     <div class="feat-grid">
       {#each [
-        { icon: '🎮', title: '3D Graphics', desc: 'Rasterization, ray tracing, and procedural scenes via wgpu. Direct GPU compute.', color: '#818CF8' },
-        { icon: '💾', title: 'Storage Throughput', desc: 'Sequential &amp; random I/O, IOPS, and latency. Measures real NVMe/SSD performance.', color: '#34D399' },
-        { icon: '🧠', title: 'AI Inference', desc: 'Transformer &amp; generative model inference on CPU. Token throughput and latency.', color: '#F472B6' },
-        { icon: '📊', title: 'Memory Bandwidth', desc: 'Read, write, and copy throughput. Cache-aware benchmarks for each level.', color: '#FBBF24' },
-        { icon: '⚡', title: 'CPU Benchmarks', desc: 'Hash throughput, compression, sorting, and FP matrix operations. All cores utilized.', color: '#FB923C' },
-        { icon: '🌡️', title: 'Thermal Monitor', desc: 'Real-time CPU/GPU temperature, power, and clock tracking during every test.', color: '#A78BFA' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M5 7l7 4 7-4"/></svg>', title: '3D Graphics', desc: 'Rasterization, ray tracing, and procedural scenes via wgpu. Direct GPU compute.', color: '#818CF8' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><ellipse cx="12" cy="12" rx="10" ry="4"/><path d="M4 12v5c0 2.2 3.6 4 8 4s8-1.8 8-4v-5"/><path d="M4 7v5"/><path d="M20 7v5"/></svg>', title: 'Storage Throughput', desc: 'Sequential &amp; random I/O, IOPS, and latency. Measures real NVMe/SSD performance.', color: '#34D399' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M9 12a3 3 0 1 0 0 6h6"/></svg>', title: 'AI Inference', desc: 'Transformer &amp; generative model inference on CPU. Token throughput and latency.', color: '#F472B6' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>', title: 'Memory Bandwidth', desc: 'Read, write, and copy throughput. Cache-aware benchmarks for each level.', color: '#FBBF24' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/><circle cx="12" cy="12" r="10"/></svg>', title: 'CPU Benchmarks', desc: 'Hash throughput, compression, sorting, and FP matrix operations. All cores utilized.', color: '#FB923C' },
+        { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><path d="M12 2v4M12 18v4"/><path d="M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8"/></svg>', title: 'Thermal Monitor', desc: 'Real-time CPU/GPU temperature, power, and clock tracking during every test.', color: '#A78BFA' },
       ] as feat}
         <div class="feat-card" style="--card-accent: {feat.color}">
-          <div class="feat-icon">{feat.icon}</div>
+          <div class="feat-icon">{@html feat.icon}</div>
           <h3>{feat.title}</h3>
           <p>{@html feat.desc}</p>
         </div>
@@ -206,7 +206,7 @@
     transition: all .25s;
   }
   .feat-card:hover { background: rgba(255,255,255,.06); border-color: var(--card-accent); translate: 0 -2px; }
-  .feat-icon { font-size: 24px; margin-bottom: 10px; }
+  .feat-icon { margin-bottom: 10px; }
   .feat-card h3 { font-size: 14px; font-weight: 600; color: #fff; margin: 0 0 6px; }
   .feat-card p { font-size: 12px; line-height: 1.5; color: #A1A1AA; margin: 0; }
 
