@@ -8,7 +8,10 @@ pub struct CpuSort {
 
 impl CpuSort {
     pub fn new() -> Self {
-        Self { data_size: 500_000 }
+        Self::with_size(500_000)
+    }
+    pub fn with_size(data_size: usize) -> Self {
+        Self { data_size }
     }
 }
 

@@ -8,7 +8,10 @@ pub struct CpuHash {
 
 impl CpuHash {
     pub fn new() -> Self {
-        Self { data_size: 1_000_000 }
+        Self::with_size(1_000_000)
+    }
+    pub fn with_size(data_size: usize) -> Self {
+        Self { data_size }
     }
 }
 

@@ -8,7 +8,10 @@ pub struct CpuFloat {
 
 impl CpuFloat {
     pub fn new() -> Self {
-        Self { matrix_size: 512 }
+        Self::with_size(512)
+    }
+    pub fn with_size(matrix_size: usize) -> Self {
+        Self { matrix_size }
     }
 }
 
