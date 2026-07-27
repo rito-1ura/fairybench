@@ -26,6 +26,13 @@
   let scrolled = $state(0)
   $effect(() => {
     if (isTauri) return
+    // Allow page scrolling for landing page
+    document.documentElement.style.overflow = 'auto'
+    document.documentElement.style.height = 'auto'
+    document.body.style.overflow = 'auto'
+    document.body.style.height = 'auto'
+    const appEl = document.getElementById('app')
+    if (appEl) { appEl.style.height = 'auto'; appEl.style.display = 'block' }
     const onScroll = () => scrolled = window.scrollY
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
