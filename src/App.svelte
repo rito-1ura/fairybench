@@ -2,12 +2,14 @@
   import './app.css'
   import SimpleMode from './lib/SimpleMode.svelte'
   import DashboardMode from './lib/DashboardMode.svelte'
+  import { t, setLang, getLang } from './lib/i18n'
 
   let mode = $state<'simple' | 'dashboard'>(
     (typeof localStorage !== 'undefined' ? localStorage.getItem('mode') as 'simple' | 'dashboard' : null) || 'simple'
   )
   let version = $state('')
   let isTauri = $state(false)
+  let lpLang = $state<'en' | 'ja'>('en')
 
   $effect(() => {
     localStorage.setItem('mode', mode)
@@ -20,9 +22,22 @@
         invoke<string>('get_version').then(v => version = v).catch(() => {})
       })
     }
+    // Restore landing lang
+    const saved = localStorage.getItem('landing_lang') as 'en' | 'ja' | null
+    if (saved === 'ja' || saved === 'en') lpLang = saved
   })
 
-  // Landing page scroll state
+  function switchLpLang(l: 'en' | 'ja') {
+    lpLang = l
+    localStorage.setItem('landing_lang', l)
+  }
+
+  function lp(key: string): string {
+    const v = i18n_lp[lpLang]?.[key]
+    return v || i18n_lp.en[key] || key
+  }
+
+  // Scroll observer for animations
   let scrolled = $state(0)
   let visibleSections = $state<Set<string>>(new Set())
 
@@ -34,10 +49,8 @@
     document.body.style.height = 'auto'
     const appEl = document.getElementById('app')
     if (appEl) { appEl.style.height = 'auto'; appEl.style.display = 'block' }
-
     const onScroll = () => scrolled = window.scrollY
     window.addEventListener('scroll', onScroll, { passive: true })
-
     const observer = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -49,11 +62,9 @@
       },
       { threshold: 0.15 }
     )
-    // Observe all sections
     setTimeout(() => {
       document.querySelectorAll('[data-observe]').forEach(el => observer.observe(el))
     }, 100)
-
     return () => {
       window.removeEventListener('scroll', onScroll)
       observer.disconnect()
@@ -61,29 +72,94 @@
   })
 
   const modules = [
-    { name: '3D Raster', cat: 'GPU', desc: 'Direct GPU rasterization pipeline via wgpu. Measures vertex shading, fragment processing, and draw-call throughput.', color: '#818CF8' },
-    { name: '3D Ray Trace', cat: 'GPU', desc: 'Hardware-accelerated ray tracing. BVH traversal, intersection, and shading performance.', color: '#818CF8' },
-    { name: '3D Procedural', cat: 'GPU', desc: 'GPU compute shader terrain generation. Noise algorithms and mesh construction throughput.', color: '#818CF8' },
-    { name: '3D Scene', cat: 'GPU', desc: 'Full 3D scene rendering with lighting, shadows, and post-processing effects.', color: '#818CF8' },
-    { name: 'Storage IO', cat: 'Storage', desc: 'NVMe sequential/random read & write. IOPS, latency, and queue-depth scaling.', color: '#34D399' },
-    { name: 'Memory BW', cat: 'RAM', desc: 'Memory read/write/copy bandwidth. Cache hierarchy-aware benchmarks (L1/L2/L3/RAM).', color: '#FBBF24' },
-    { name: 'AI Inference', cat: 'AI', desc: 'Transformer inference pipeline. Token generation throughput and per-layer latency.', color: '#F472B6' },
-    { name: 'AI Generative', cat: 'AI', desc: 'Generative model batch inference. Parallel prompt processing and decode speed.', color: '#F472B6' },
-    { name: 'CPU Hash', cat: 'CPU', desc: 'SHA-256 hashing throughput. Measures integer ALU and memory pipeline performance.', color: '#FB923C' },
-    { name: 'CPU Compress', cat: 'CPU', desc: 'LZ4-style run-length compression. Data transformation and branch prediction throughput.', color: '#FB923C' },
-    { name: 'CPU Sort', cat: 'CPU', desc: 'Quicksort 2M elements. Memory access pattern and comparison throughput.', color: '#FB923C' },
-    { name: 'CPU Float', cat: 'CPU', desc: '1024×128 FP matrix multiply. FMA pipeline utilization and GFLOPS measurement.', color: '#FB923C' },
+    { name: '3D Raster', cat: 'GPU', desc: 'Direct GPU rasterization pipeline via wgpu.', color: '#818CF8' },
+    { name: '3D Ray Trace', cat: 'GPU', desc: 'Hardware-accelerated ray tracing. BVH traversal.', color: '#818CF8' },
+    { name: '3D Procedural', cat: 'GPU', desc: 'GPU compute shader terrain generation.', color: '#818CF8' },
+    { name: '3D Scene', cat: 'GPU', desc: 'Full 3D scene with lighting, shadows, post-processing.', color: '#818CF8' },
+    { name: 'Storage IO', cat: 'Storage', desc: 'NVMe sequential/random read & write. IOPS, latency.', color: '#34D399' },
+    { name: 'Memory BW', cat: 'RAM', desc: 'Memory read/write/copy. Cache hierarchy-aware.', color: '#FBBF24' },
+    { name: 'AI Inference', cat: 'AI', desc: 'Transformer inference pipeline.', color: '#F472B6' },
+    { name: 'AI Generative', cat: 'AI', desc: 'Generative model batch inference.', color: '#F472B6' },
+    { name: 'CPU Hash', cat: 'CPU', desc: 'SHA-256 hashing throughput.', color: '#FB923C' },
+    { name: 'CPU Compress', cat: 'CPU', desc: 'LZ4 run-length compression.', color: '#FB923C' },
+    { name: 'CPU Sort', cat: 'CPU', desc: 'Quicksort 2M elements.', color: '#FB923C' },
+    { name: 'CPU Float', cat: 'CPU', desc: '1024×128 FP matrix multiply.', color: '#FB923C' },
   ]
 
-  const categories = ['GPU', 'Storage', 'RAM', 'AI', 'CPU']
-
-  const faqs = [
-    { q: 'Is FairyBench free?', a: 'Yes. Fully open source under MIT license. No ads, no telemetry, no paywalls.' },
-    { q: 'What hardware does it support?', a: 'Windows 10/11 with any modern GPU supporting wgpu (D3D12/Vulkan/Metal). NVMe SSDs recommended for storage tests.' },
-    { q: 'How long does a benchmark take?', a: 'Full suite runs in 3-5 minutes. Individual modules run in 15-60 seconds each.' },
-    { q: 'Can I compare results online?', a: 'Yes! Results are automatically submitted to the global leaderboard. View rankings at fairybench.vercel.app.' },
-    { q: 'Does it affect system performance?', a: 'Benchmarks are read-only — they measure, they don\'t modify. Thermal monitoring is passive observation.' },
-  ]
+  const i18n_lp: Record<string, Record<string, string>> = {
+    en: {
+      badge: 'v0.2.0 — Desktop Benchmark Suite',
+      title1: 'Measure Your Machine',
+      title2: 'Without Compromise',
+      sub: "12 benchmark modules spanning GPU, storage, memory, AI, and CPU — powered by Rust, wgpu, and Tauri 2.",
+      dl_btn: 'Download for Windows',
+      src_btn: 'Source Code',
+      nav_mod: 'Modules', nav_spec: 'Specs', nav_faq: 'FAQ', nav_gh: 'GitHub', nav_dl: 'Download',
+      s1n: '12', s1l: 'Benchmark Modules', s1s: 'Across 5 categories',
+      s2n: '5', s2l: 'Categories', s2s: 'GPU / Storage / RAM / AI / CPU',
+      s3n: '3-5', s3l: 'Minutes per Run', s3s: 'Full suite benchmark',
+      s4n: '1', s4l: 'Desktop App', s4s: 'Native. No web. No cloud.',
+      mod_l: 'Benchmark Modules', mod_t: '12 modules, 5 categories',
+      mod_s: 'Every module runs in isolation. Results are scored, normalized, and logged to local SQLite.',
+      spec_l: 'Technical Specifications', spec_t: 'Built for performance, measured in precision',
+      spec: [
+        {t:'Rendering Engine',d:'wgpu (WebGPU) with D3D12/Vulkan/Metal backends. GPU compute shaders for procedural generation.'},
+        {t:'Desktop Native',d:'Tauri 2 framework. Single ~8MB executable. No Electron overhead. Native Windows API access.'},
+        {t:'Real-time Analysis',d:'Live scoring with CI, CV, outlier detection. Per-module breakdown and historical trends.'},
+        {t:'Privacy First',d:'All data stored locally in SQLite. Online leaderboard is opt-in. No telemetry.'},
+        {t:'Fast Runs',d:'Full 12-module suite completes in 3-5 minutes. Concurrent GPU + CPU execution.'},
+        {t:'Thermal Monitoring',d:'Real-time CPU/GPU temperature, power, and clock sampled every 2 seconds.'},
+      ],
+      dl_t: 'Ready to benchmark?', dl_s: 'Download the latest release for Windows. Portable, no installer.',
+      dl_b: 'Download v0.2.0', dl_gh: 'View on GitHub', dl_m: 'Windows 10/11 · ~8 MB · Open Source (MIT)',
+      faq_l: 'FAQ', faq_t: 'Common questions',
+      faqs: [
+        {q:'Is FairyBench free?',a:'Yes. Fully open source under MIT. No ads, no telemetry, no paywalls.'},
+        {q:'What hardware does it support?',a:'Windows 10/11 with wgpu-capable GPU (D3D12/Vulkan/Metal). NVMe SSDs recommended.'},
+        {q:'How long does a benchmark take?',a:'Full suite 3-5 min. Individual modules 15-60 sec.'},
+        {q:'Can I compare results online?',a:'Yes! Auto-submits to the global leaderboard at fairybench.vercel.app.'},
+        {q:'Does it affect system performance?',a:"Benchmarks are read-only. Thermal monitoring is passive observation."},
+      ],
+      show_l: 'Desktop App Preview', show_t: 'See it in action', show_s: 'Real-time dashboard with live scoring, thermal monitoring, and module telemetry.',
+      ft: 'Open-source PC benchmark suite. Rust + Tauri 2 + Svelte 5 + wgpu.',
+    },
+    ja: {
+      badge: 'v0.2.0 — デスクトップベンチマーク',
+      title1: 'あなたのマシンを',
+      title2: '徹底測定',
+      sub: "GPU、ストレージ、メモリ、AI、CPUの12モジュール。Rust、wgpu、Tauri 2で構築。",
+      dl_btn: 'Windows版をダウンロード',
+      src_btn: 'ソースコード',
+      nav_mod: 'モジュール', nav_spec: 'スペック', nav_faq: 'よくある質問', nav_gh: 'GitHub', nav_dl: 'ダウンロード',
+      s1n: '12', s1l: 'ベンチマークモジュール', s1s: '5カテゴリ',
+      s2n: '5', s2l: 'カテゴリ', s2s: 'GPU / ストレージ / RAM / AI / CPU',
+      s3n: '3-5', s3l: '分で完了', s3s: 'フルスイート',
+      s4n: '1', s4l: 'デスクトップアプリ', s4s: 'ネイティブ。Web不要。',
+      mod_l: 'ベンチマークモジュール', mod_t: '12モジュール、5カテゴリ',
+      mod_s: '各モジュールは独立実行。結果はSQLiteに履歴保存。',
+      spec_l: '技術仕様', spec_t: '精密測定のために設計',
+      spec: [
+        {t:'レンダリングエンジン',d:'wgpu（WebGPU）採用。GPUコンピュートシェーダーでプロシージャル生成。'},
+        {t:'デスクトップネイティブ',d:'Tauri 2。約8MB。Electron不要。ネイティブWindows API。'},
+        {t:'リアルタイム解析',d:'信頼区間、CV、外れ値検出。モジュール別内訳と履歴トレンド。'},
+        {t:'プライバシー最優先',d:'全データはローカル保存。テレメトリなし。'},
+        {t:'高速実行',d:'フルスイート3-5分。GPU+CPU同時実行可能。'},
+        {t:'温度監視',d:'CPU/GPU温度、消費電力、クロックを2秒間隔でサンプリング。'},
+      ],
+      dl_t: 'ベンチマークを始めましょう', dl_s: 'Windows向け最新版。インストーラー不要のポータブル。',
+      dl_b: 'v0.2.0 をダウンロード', dl_gh: 'GitHubで見る', dl_m: 'Windows 10/11 · ~8 MB · オープンソース (MIT)',
+      faq_l: 'よくある質問', faq_t: 'よくある質問',
+      faqs: [
+        {q:'FairyBenchは無料ですか？',a:'はい。MITライセンスの完全オープンソース。'},
+        {q:'対応ハードウェアは？',a:'Windows 10/11、wgpu対応GPU。NVMe SSD推奨。'},
+        {q:'所要時間は？',a:'フルスイート3-5分。個別15-60秒。'},
+        {q:'オンラインで比較できますか？',a:'はい。fairybench.vercel.appでランキングを確認。'},
+        {q:'システムに影響は？',a:'ベンチマークは読み取り専用。変更は加えません。'},
+      ],
+      show_l: 'デスクトップアプリプレビュー', show_t: '実際の動作画面', show_s: 'リアルタイムダッシュボード。ライブスコアリング、温度監視。',
+      ft: 'オープンソースPCベンチマーク。Rust + Tauri 2 + Svelte 5 + wgpu。',
+    },
+  }
 </script>
 
 {#if !isTauri}
@@ -115,30 +191,34 @@
         <span>FairyBench</span>
       </div>
       <div class="lp-nav-links">
-        <a href="#modules">Modules</a>
-        <a href="#specs">Specs</a>
-        <a href="#faq">FAQ</a>
-        <a href="https://github.com/rito-1ura/fairybench" target="_blank">GitHub</a>
-        <a class="lp-nav-dl" href="https://github.com/rito-1ura/fairybench/releases" target="_blank">Download</a>
+        <a href="#modules">{lp('nav_mod')}</a>
+        <a href="#specs">{lp('nav_spec')}</a>
+        <a href="#faq">{lp('nav_faq')}</a>
+        <a href="https://github.com/rito-1ura/fairybench" target="_blank">{lp('nav_gh')}</a>
+        <div class="lp-nav-lang">
+          <button class="lp-lang-btn" class:active={lpLang==='en'} onclick={()=>switchLpLang('en')}>EN</button>
+          <button class="lp-lang-btn" class:active={lpLang==='ja'} onclick={()=>switchLpLang('ja')}>JA</button>
+        </div>
+        <a class="lp-nav-dl" href="https://github.com/rito-1ura/fairybench/releases" target="_blank">{lp('nav_dl')}</a>
       </div>
     </div>
   </nav>
 
-  <div class="lp-hero-body" data-observe="hero">
-    <div class="lp-hero-badge">v0.2.0 &mdash; Desktop Benchmark Suite</div>
+  <div class="lp-hero-body">
+    <div class="lp-hero-badge">{lp('badge')}</div>
     <h1 class="lp-hero-title">
-      <span class="lp-ht">Measure Your Machine</span>
-      <span class="lp-ht lp-ht-accent">Without Compromise</span>
+      <span class="lp-ht">{lp('title1')}</span>
+      <span class="lp-ht lp-ht-accent">{lp('title2')}</span>
     </h1>
-    <p class="lp-hero-sub">12 benchmark modules spanning GPU, storage, memory, AI, and CPU &mdash;<br/>powered by Rust, wgpu, and Tauri 2. Real results, not estimates.</p>
+    <p class="lp-hero-sub">{lp('sub')}</p>
     <div class="lp-hero-actions">
       <a class="lp-btn lp-btn-primary" href="https://github.com/rito-1ura/fairybench/releases" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download for Windows
+        {lp('dl_btn')}
       </a>
       <a class="lp-btn lp-btn-secondary" href="https://github.com/rito-1ura/fairybench" target="_blank">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-        Source Code
+        {lp('src_btn')}
       </a>
     </div>
   </div>
@@ -150,10 +230,10 @@
 <!-- ── STATS ── -->
 <section class="lp-stats" id="stats" data-observe="stats">
   {#each [
-    { n: 12, l: 'Benchmark Modules', s: 'Across 5 categories' },
-    { n: '5', l: 'Categories', s: 'GPU / Storage / RAM / AI / CPU' },
-    { n: '3-5', l: 'Minutes per Run', s: 'Full suite benchmark' },
-    { n: '1', l: 'Desktop App', s: 'No web. No cloud. Just Tauri.' },
+    { n: lp('s1n'), l: lp('s1l'), s: lp('s1s') },
+    { n: lp('s2n'), l: lp('s2l'), s: lp('s2s') },
+    { n: lp('s3n'), l: lp('s3l'), s: lp('s3s') },
+    { n: lp('s4n'), l: lp('s4l'), s: lp('s4s') },
   ] as stat}
     <div class="lp-stat-card" class:lp-visible={visibleSections.has('stats')}>
       <div class="lp-stat-n">{stat.n}</div>
@@ -165,11 +245,11 @@
 
 <!-- ── MODULES TABLE ── -->
 <section class="lp-modules" id="modules" data-observe="modules">
-  <div class="lp-sec-label">Benchmark Modules</div>
-  <h2 class="lp-sec-title">12 modules, 5 categories</h2>
-  <p class="lp-sec-sub">Every module runs in isolation. Results are scored, normalized, and logged to local SQLite with full history tracking.</p>
+  <div class="lp-sec-label">{lp('mod_l')}</div>
+  <h2 class="lp-sec-title">{lp('mod_t')}</h2>
+  <p class="lp-sec-sub">{lp('mod_s')}</p>
 
-  {#each categories as cat}
+  {#each ['GPU', 'Storage', 'RAM', 'AI', 'CPU'] as cat}
     <div class="lp-cat-block" class:lp-visible={visibleSections.has('modules')}>
       <div class="lp-cat-head">
         <div class="lp-cat-dot" style="background: {modules.find(m => m.cat === cat)?.color || '#818CF8'}"></div>
@@ -189,39 +269,62 @@
 
 <!-- ── TECH SPECS ── -->
 <section class="lp-specs" id="specs" data-observe="specs">
-  <div class="lp-sec-label">Technical Specifications</div>
-  <h2 class="lp-sec-title">Built for performance, measured in precision</h2>
-
+  <div class="lp-sec-label">{lp('spec_l')}</div>
+  <h2 class="lp-sec-title">{lp('spec_t')}</h2>
   <div class="lp-specs-grid">
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-      <h3>Rendering Engine</h3>
-      <p>wgpu (WebGPU) with D3D12/Vulkan/Metal backends. GPU compute shaders for procedural generation and post-processing.</p>
-    </div>
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:0.1s">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-      <h3>Desktop Native</h3>
-      <p>Tauri 2 framework. Single ~8MB executable. No Electron overhead. Native Windows 10/11 API access for thermal monitoring.</p>
-    </div>
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:0.2s">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <h3>Real-time Analysis</h3>
-      <p>Live scoring with animated transitions. Confidence intervals, CV, outlier detection. Per-module breakdown and historical trends.</p>
-    </div>
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:0.3s">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <h3>Privacy First</h3>
-      <p>All data stored locally in SQLite. Online leaderboard is opt-in. No telemetry, no analytics, no data collection.</p>
-    </div>
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:0.4s">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      <h3>Fast Runs</h3>
-      <p>Full 12-module suite completes in 3-5 minutes. Each module 15-60s. Concurrent GPU + CPU execution where possible.</p>
-    </div>
-    <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:0.5s">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M12 2v4M12 18v4"/><path d="M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="4"/></svg>
-      <h3>Thermal Monitoring</h3>
-      <p>Real-time CPU/GPU temperature, power draw, and clock frequency sampled every 2 seconds during benchmarks.</p>
+    {#each ['spec_1','spec_2','spec_3','spec_4','spec_5','spec_6'] as s, i}
+      <div class="lp-spec-card" class:lp-visible={visibleSections.has('specs')} style="transition-delay:{i*0.1}s">
+        <div class="lp-spec-svg">
+          {#if s === 'spec_1'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M5 7l7 4 7-4"/></svg>
+          {:else if s === 'spec_2'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6M15 9l-6 6"/><circle cx="12" cy="12" r="10"/></svg>
+          {:else if s === 'spec_3'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          {:else if s === 'spec_4'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          {:else if s === 'spec_5'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          {:else if s === 'spec_6'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M12 2v4M12 18v4"/><path d="M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="4"/></svg>
+          {/if}
+        </div>
+        <h3>{i18n_lp[lpLang].spec[i]?.t || ''}</h3>
+        <p>{i18n_lp[lpLang].spec[i]?.d || ''}</p>
+      </div>
+    {/each}
+  </div>
+</section>
+
+<!-- ── APP SHOWCASE ── -->
+<section class="lp-showcase" id="showcase" data-observe="showcase">
+  <div class="lp-sec-label">{lp('show_l')}</div>
+  <h2 class="lp-sec-title">{lp('show_t')}</h2>
+  <p class="lp-sec-sub">{lp('show_s')}</p>
+  <div class="lp-showcase-screens" class:lp-visible={visibleSections.has('showcase')}>
+    <!-- Dashboard mockup -->
+    <div class="lp-mockup">
+      <div class="lp-mockup-bar">
+        <div class="lp-mockup-dots"><span></span><span></span><span></span></div>
+        <span class="lp-mockup-title">FairyBench — Dashboard</span>
+      </div>
+      <div class="lp-mockup-body">
+        <div class="lp-mock-col">
+          <div class="lp-mock-card"><div class="lp-mock-label">Final Score</div><div class="lp-mock-val" style="color:var(--accent)">125,678</div><div class="lp-mock-bar" style="width:80%"></div></div>
+          <div class="lp-mock-card"><div class="lp-mock-label">95% CI</div><div class="lp-mock-val">122,450 – 128,900</div><div class="lp-mock-bar" style="width:70%"></div></div>
+        </div>
+        <div class="lp-mock-col">
+          <div class="lp-mock-card"><div class="lp-mock-label">CPU Hash</div><div class="lp-mock-val">42,315</div><div class="lp-mock-bar" style="width:65%"></div></div>
+          <div class="lp-mock-card"><div class="lp-mock-label">3D Scene</div><div class="lp-mock-val">18,240</div><div class="lp-mock-bar" style="width:55%"></div></div>
+          <div class="lp-mock-card"><div class="lp-mock-label">Memory BW</div><div class="lp-mock-val">31,500</div><div class="lp-mock-bar" style="width:72%"></div></div>
+        </div>
+        <div class="lp-mock-col">
+          <div class="lp-mock-graph">
+            <svg viewBox="0 0 100 40" style="width:100%;height:100%"><polyline points="0,35 15,28 30,30 45,18 60,22 75,10 90,14 100,8" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".6"/><polyline points="0,35 15,28 30,30 45,18 60,22 75,10 90,14 100,8" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="100" cy="8" r="2" fill="var(--accent)"/></svg>
+          </div>
+          <div class="lp-mock-temp"><span>CPU 62°C</span><span>GPU 58°C</span></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -229,25 +332,25 @@
 <!-- ── DOWNLOAD ── -->
 <section class="lp-download" id="download" data-observe="download">
   <div class="lp-dl-card" class:lp-visible={visibleSections.has('download')}>
-    <h2>Ready to benchmark?</h2>
-    <p>Download the latest release for Windows. No installer required &mdash; portable executable.</p>
+    <h2>{lp('dl_t')}</h2>
+    <p>{lp('dl_s')}</p>
     <div class="lp-dl-actions">
       <a class="lp-btn lp-btn-primary lp-btn-lg" href="https://github.com/rito-1ura/fairybench/releases" target="_blank">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download v0.2.0
+        {lp('dl_b')}
       </a>
-      <a class="lp-btn lp-btn-ghost" href="https://github.com/rito-1ura/fairybench" target="_blank">View on GitHub</a>
+      <a class="lp-btn lp-btn-ghost" href="https://github.com/rito-1ura/fairybench" target="_blank">{lp('dl_gh')}</a>
     </div>
-    <div class="lp-dl-meta">Windows 10/11 &middot; ~8 MB &middot; Open Source (MIT)</div>
+    <div class="lp-dl-meta">{lp('dl_m')}</div>
   </div>
 </section>
 
 <!-- ── FAQ ── -->
 <section class="lp-faq" id="faq" data-observe="faq">
-  <div class="lp-sec-label">FAQ</div>
-  <h2 class="lp-sec-title">Common questions</h2>
+  <div class="lp-sec-label">{lp('faq_l')}</div>
+  <h2 class="lp-sec-title">{lp('faq_t')}</h2>
   <div class="lp-faq-list" class:lp-visible={visibleSections.has('faq')}>
-    {#each faqs as item}
+    {#each i18n_lp[lpLang].faqs as item}
       <details class="lp-faq-item">
         <summary><span>{item.q}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="6 9 12 15 18 9"/></svg></summary>
         <p>{item.a}</p>
@@ -264,7 +367,7 @@
         <svg viewBox="0 0 32 32" fill="none" style="width:18px;height:18px"><rect x="2" y="2" width="28" height="28" rx="7" fill="var(--accent)" fill-opacity=".15"/><text x="16" y="23" text-anchor="middle" fill="var(--accent)" font-size="20" font-weight="800">F</text></svg>
         <span>FairyBench</span>
       </div>
-      <p class="lp-footer-desc">Open-source PC benchmark suite. Built with Rust, Tauri 2, Svelte 5, and wgpu.</p>
+      <p class="lp-footer-desc">{lp('ft')}</p>
     </div>
     <div class="lp-fcol">
       <span class="lp-fh">Links</span>
@@ -316,9 +419,16 @@
 .lp-nav-links a { color: #A1A1AA; text-decoration: none; transition: color .2s; }
 .lp-nav-links a:hover { color: #fff; }
 .lp-nav-dl {
-  padding: 5px 14px; border-radius: 6px; background: var(--accent); color: #fff !important; font-weight: 600; transition: opacity .2s;
-}
-.lp-nav-dl:hover { opacity: .8; }
+    padding: 5px 14px; border-radius: 6px; background: var(--accent); color: #fff !important; font-weight: 600; transition: opacity .2s;
+  }
+  .lp-nav-dl:hover { opacity: .8; }
+  .lp-nav-lang { display: flex; gap: 2px; }
+  .lp-lang-btn {
+    padding: 2px 8px; font-size: 10px; font-weight: 600; border-radius: 4px;
+    background: transparent; color: #52525B; border: 1px solid rgba(255,255,255,.08); cursor: pointer; transition: all .2s;
+  }
+  .lp-lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .lp-lang-btn:hover:not(.active) { color: #A1A1AA; border-color: rgba(255,255,255,.2); }
 
 /* ── Hero ── */
 .lp-hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 80px 24px 60px; overflow: hidden; }
@@ -417,6 +527,33 @@
 .lp-dl-card > p { font-size: 13px; color: #A1A1AA; margin: 0 0 24px; }
 .lp-dl-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .lp-dl-meta { font-size: 11px; color: #52525B; margin-top: 16px; }
+
+/* ── Showcase ── */
+.lp-showcase { max-width: 800px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+.lp-showcase-screens.lp-visible { animation: lpFadeUp .5s ease-out forwards; }
+.lp-mockup {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 10px;
+  overflow: hidden; text-align: left;
+}
+.lp-mockup-bar {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.lp-mockup-dots { display: flex; gap: 5px; }
+.lp-mockup-dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.15); }
+.lp-mockup-title { font-size: 11px; color: #A1A1AA; }
+.lp-mockup-body { display: flex; gap: 12px; padding: 14px; }
+@media (max-width: 500px) { .lp-mockup-body { flex-direction: column; } }
+.lp-mock-col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.lp-mock-card {
+  padding: 10px 12px; border-radius: 6px; background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.05);
+}
+.lp-mock-label { font-size: 10px; color: #A1A1AA; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.lp-mock-val { font-size: 14px; font-weight: 700; color: #E4E4E7; }
+.lp-mock-bar { height: 3px; border-radius: 2px; background: linear-gradient(90deg,var(--accent),transparent); margin-top: 6px; }
+.lp-mock-graph { padding: 8px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.05); height: 60px; }
+.lp-mock-temp { display: flex; justify-content: center; gap: 16px; font-size: 10px; color: #A1A1AA; }
 
 /* ── FAQ ── */
 .lp-faq { max-width: 800px; margin: 0 auto; padding: 60px 24px; text-align: center; }
