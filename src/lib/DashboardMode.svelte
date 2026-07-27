@@ -167,14 +167,18 @@
   }
 
   const moduleIcons: Record<string, string> = {
-    'Render-Raster': svgs.gpu,
-    'Render-PathTrace': svgs.gpu,
-    'Render-Procedural': svgs.cpu,
-    'Storage-Throughput': svgs.storage,
-    'Memory-Bandwidth': svgs.memory,
-    'AI-Inference': svgs.ai,
-    'AI-Generative': svgs.ai,
-  }
+      'Render-Raster': svgs.gpu,
+      'Render-PathTrace': svgs.gpu,
+      'Render-Procedural': svgs.cpu,
+      'Storage-Throughput': svgs.storage,
+      'Memory-Bandwidth': svgs.memory,
+      'AI-Inference': svgs.ai,
+      'AI-Generative': svgs.ai,
+      'Cpu-Hash': svgs.cpu,
+      'Cpu-Compress': svgs.cpu,
+      'Cpu-Sort': svgs.cpu,
+      'Cpu-Float': svgs.cpu,
+    }
 
   // Dev info
   async function loadDeviceInfo() {
@@ -407,6 +411,14 @@
                     <Scene3DResult score={mod.score} label={mod.label} />
                   {:else if mod.name === 'Storage-Throughput'}
                     <DiskResult score={mod.score} label={mod.label} />
+                  {:else if mod.name === 'Cpu-Hash'}
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Hash Throughput</span><span class="mi-val">{mod.label}</span></div></div>
+                  {:else if mod.name === 'Cpu-Compress'}
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Compress Speed</span><span class="mi-val">{mod.label}</span></div></div>
+                  {:else if mod.name === 'Cpu-Sort'}
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Sort Rate</span><span class="mi-val">{mod.label}</span></div></div>
+                  {:else if mod.name === 'Cpu-Float'}
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">FP MATH</span><span class="mi-val">{mod.label}</span></div></div>
                   {/if}
                 {/if}
               {/each}
@@ -774,6 +786,18 @@
   .game-no { color: var(--red); background: rgba(239,68,68,0.1); }
   .game-fps { font-size: 10px; color: var(--text-muted); text-align: right; white-space: nowrap; min-width: fit-content; }
   .game-notes { font-size: 10px; color: var(--text-muted); word-break: break-word; min-width: 0; }
+
+  /* Module info cards */
+  .module-info-card {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; margin-bottom: 4px;
+    background: var(--bg-primary); border: 1px solid var(--border);
+    border-radius: 5px; font-size: 11px;
+  }
+  .module-info-card .mi-icon { flex-shrink: 0; width: 14px; height: 14px; color: var(--accent); }
+  .module-info-card .mi-body { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+  .module-info-card .mi-name { color: var(--text-muted); font-size: 10px; }
+  .module-info-card .mi-val { color: var(--text-primary); font-weight: 600; font-size: 11px; }
 
   /* Modal overlay — shared with detail modal */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; }

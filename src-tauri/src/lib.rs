@@ -115,6 +115,10 @@ async fn run_benchmark(
         Box::new(workloads::MemoryBandwidth::new()),
         Box::new(workloads::AiInference::new()),
         Box::new(workloads::AiGenerative::new()),
+        Box::new(workloads::CpuHash::new()),
+        Box::new(workloads::CpuCompress::new()),
+        Box::new(workloads::CpuSort::new()),
+        Box::new(workloads::CpuFloat::new()),
     ];
 
     let mut raw_results = Vec::new();

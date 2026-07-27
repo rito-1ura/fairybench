@@ -6,6 +6,10 @@ mod storage_throughput;
 mod memory_bandwidth;
 mod ai_inference;
 mod ai_generative;
+mod cpu_hash;
+mod cpu_compress;
+mod cpu_sort;
+mod cpu_float;
 
 pub use render_raster::RenderRaster;
 pub use render_pathtrace::RenderPathTrace;
@@ -15,3 +19,7 @@ pub use storage_throughput::StorageThroughput;
 pub use memory_bandwidth::MemoryBandwidth;
 pub use ai_inference::AiInference;
 pub use ai_generative::AiGenerative;
+pub use cpu_hash::CpuHash;
+pub use cpu_compress::CpuCompress;
+pub use cpu_sort::CpuSort;
+pub use cpu_float::CpuFloat;
