@@ -119,7 +119,8 @@ export function formatScore(v: number, lang?: Lang): string {
   if (l === 'en') return v.toLocaleString('en-US')
   if (l === 'ja') {
     const abs = Math.abs(v)
-    if (abs >= 1e8) return (v / 1e8).toFixed(1) + '億'
+    if (abs >= 1e8) return (v / 1e8).toFixed(2) + '億'
+    if (abs >= 1e7) return (v / 1e7).toFixed(1) + '千万'
     if (abs >= 1e4) return (v / 1e4).toFixed(1) + '万'
     return v.toLocaleString('ja-JP')
   }
