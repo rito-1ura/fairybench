@@ -6,6 +6,7 @@
   import DiskView from './components/DiskView.svelte'
   import Scene3DResult from './components/Scene3DResult.svelte'
   import DiskResult from './components/DiskResult.svelte'
+  import { t, setLang, getLang, formatScore as i18nFormatScore } from './i18n'
 
   interface SubScore { module_name: string; raw_score: number; normalized_score: number }
   interface RunResult {
@@ -58,6 +59,10 @@
   let currentRunScore = $state(0)
   let scoreAnimTimers: ReturnType<typeof setInterval>[] = []
   let destroyed = false
+
+  // Collapsible panels
+  let lbCollapsed = $state(false)
+  let showStatsPanel = $state(false)
   let lastAddedScore = $state(0)
   let lastAddedName = $state('')
 
@@ -185,6 +190,19 @@
     try { deviceInfo = await invoke<DeviceInfo>('get_device_info') } catch {}
   }
   $effect(() => { loadDeviceInfo() })
+
+  // F11 fullscreen
+  $effect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'F11') {
+        e.preventDefault()
+        if (document.fullscreenElement) document.exitFullscreen()
+        else document.documentElement.requestFullscreen()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  })
 
   // History
   async function loadHistory() {
@@ -315,8 +333,13 @@
     </div>
     <div class="header-actions">
       <button class="btn btn-outline" onclick={() => onSwitch()}>
-        {@html svgs.lightning} Simple Mode
+        {@html svgs.lightning} {t('simple_mode')}
       </button>
+      <div class="lang-toggle">
+        <button class="btn btn-xs btn-outline" onclick={() => { setLang('en'); window.location.reload() }} class:active={getLang()==='en'}>EN</button>
+        <button class="btn btn-xs btn-outline" onclick={() => { setLang('ja'); window.location.reload() }} class:active={getLang()==='ja'}>JA</button>
+        <button class="btn btn-xs btn-outline" onclick={() => { setLang('default'); window.location.reload() }} class:active={getLang()==='default'}>DEF</button>
+      </div>
     </div>
   </div>
 
@@ -353,12 +376,17 @@
   <!-- Main Content: Sidebar + Grid -->
   <div class="main-area">
     <!-- Leaderboard Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
+    <aside class="sidebar" class:collapsed={lbCollapsed}>
+      <div class="sidebar-header" onclick={() => lbCollapsed = !lbCollapsed} style="cursor:pointer" role="button" tabindex="0"
+           onkeydown={(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); lbCollapsed = !lbCollapsed } }}>
         {@html svgs.trophy}
-        <span>Leaderboard</span>
+        <span>{t('leaderboard')}</span>
         <span class="sidebar-badge">{leaderboard.length}</span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;margin-left:auto;transition:transform .2s;transform:{lbCollapsed ? 'rotate(-90deg)' : 'rotate(0)'}">
+          <path d="M4 6l4 4 4-4"/>
+        </svg>
       </div>
+      {#if !lbCollapsed}
       <div class="sidebar-body">
         {#if leaderboard.length === 0}
           <div class="empty-leaderboard">Run a benchmark to appear here</div>
@@ -381,9 +409,10 @@
               <span class="lb-date">{new Date(run.executed_at).toLocaleDateString('ja-JP', {month:'short', day:'numeric'})}</span>
             </div>
           {/each}
-        {/if}
-      </div>
-    </aside>
+          {/if}
+          </div>
+          {/if}
+          </aside>
 
     <!-- Panel Grid -->
     <div class="panel-grid">
@@ -581,8 +610,21 @@
         </div>
       </div>
 
-      <!-- Stats Panel -->
-      <StatsPanel {result} {history} {deleteRun} {formatScore} />
+      <!-- Stats Panel (collapsible) -->
+      <div class="panel collapsible">
+        <div class="panel-header" onclick={() => showStatsPanel = !showStatsPanel} style="cursor:pointer" role="button" tabindex="0"
+             onkeydown={(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); showStatsPanel = !showStatsPanel } }}>
+          <span class="panel-title">{@html svgs.chart} {t('stats')}</span>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;transition:transform .2s;transform:{showStatsPanel ? 'rotate(0)' : 'rotate(-90deg)'}">
+            <path d="M4 6l4 4 4-4"/>
+          </svg>
+        </div>
+        {#if showStatsPanel}
+        <div class="panel-body">
+          <StatsPanel {result} {history} deleteRun={deleteRun} formatScore={formatScore.bind(null)} />
+        </div>
+        {/if}
+      </div>
     </div>
   </div>
 
@@ -704,11 +746,12 @@
   .main-area { display: flex; gap: 12px; flex: 1; min-height: 0; }
 
   /* Sidebar / Leaderboard */
-  .sidebar {
+  .sidebar:not(.collapsed) {
     width: 240px; flex-shrink: 0;
     background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg);
     display: flex; flex-direction: column; overflow: hidden;
   }
+  .sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; border: none; padding: 0; }
   .sidebar-header {
     display: flex; align-items: center; gap: 6px;
     padding: 12px 14px; border-bottom: 1px solid var(--bg-tertiary);
@@ -719,6 +762,8 @@
     margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 3px;
     background: var(--bg-tertiary); color: var(--text-muted);
   }
+  .lang-toggle { display: flex; gap: 2px; }
+  .lang-toggle .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .sidebar-body { flex: 1; overflow-y: auto; padding: 6px; }
   .empty-leaderboard { font-size: 11px; color: var(--text-muted); text-align: center; padding: 24px 8px; }
 

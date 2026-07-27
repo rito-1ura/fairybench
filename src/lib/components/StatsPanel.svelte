@@ -27,8 +27,8 @@
 
   // History chart — inline SVG chart with bars + line
   const maxHistory = 20
-  const chartHeight = 80
-  const chartWidth = 280
+  const chartHeight = 120
+  const chartWidth = 320
 
   function chartData(): { score: number; label: string; run_id: string }[] {
     const raw = [...history].slice(0, maxHistory)
