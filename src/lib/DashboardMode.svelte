@@ -528,7 +528,7 @@
         </div>
       </div>
 
-      <!-- Game Analysis -->
+      <!-- Game Analysis Panel (now in popup modal below) -->
       {#if showGameAnalysis && gameAnalysis}
         <div class="panel">
           <div class="panel-header">
@@ -601,6 +601,30 @@
           <div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--bg-primary);border-radius:4px;font-size:11px">
             <span style="color:var(--text-muted)">{name}</span>
             <span style="color:var(--text-primary);font-weight:500">{formatScore(sub.raw_score)}</span>
+          </div>
+        {/each}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Game Analysis Modal (popup) -->
+{#if showGameAnalysis && gameAnalysis}
+  <div class="modal-overlay" onclick={() => { showGameAnalysis = false; gameAnalysis = null }} role="dialog" aria-modal="true">
+    <div class="modal-content game-modal" onclick={(e) => e.stopPropagation()}>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">
+          {@html svgs.chart} Game Analysis
+        </h3>
+        <button class="btn btn-outline btn-sm" onclick={() => { showGameAnalysis = false; gameAnalysis = null }}>Close</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow-y:auto;padding-right:4px">
+        {#each gameAnalysis as g}
+          <div class="game-entry" class:status-pass={g.status_jp === '快適'} class:status-ok={g.status_jp === '可'} class:status-limit={g.status_jp === '限界'} class:status-no={g.status_jp === '不可'}>
+            <div class="game-title">{g.title}</div>
+            <div class="game-status" class:game-pass={g.status_jp === '快適'} class:game-ok={g.status_jp === '可'} class:game-limit={g.status_jp === '限界'} class:game-no={g.status_jp === '不可'}>{g.status_jp}</div>
+            <div class="game-fps">{g.fps_est}</div>
+            <div class="game-notes">{g.notes}</div>
           </div>
         {/each}
       </div>
@@ -720,22 +744,28 @@
 
   /* Game Analysis */
   .game-entry {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 8px; border-radius: 5px; background: var(--bg-primary);
-    border: 1px solid var(--border); font-size: 11px;
+    display: grid; grid-template-columns: 1fr 48px 72px 1fr; gap: 6px;
+    align-items: center; padding: 6px 8px; border-radius: 5px;
+    background: var(--bg-primary); border: 1px solid var(--border); font-size: 11px;
+    min-width: 0; overflow: hidden;
   }
   .game-entry.status-pass { border-left: 3px solid var(--green); }
   .game-entry.status-ok { border-left: 3px solid var(--accent); }
   .game-entry.status-limit { border-left: 3px solid var(--yellow); }
   .game-entry.status-no { border-left: 3px solid var(--red); }
-  .game-title { flex: 1; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .game-status { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+  .game-title { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-status { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; text-align: center; }
   .game-pass { color: var(--green); background: rgba(34,197,94,0.1); }
   .game-ok { color: var(--accent); background: rgba(129,140,248,0.1); }
   .game-limit { color: var(--yellow); background: rgba(245,158,11,0.1); }
   .game-no { color: var(--red); background: rgba(239,68,68,0.1); }
-  .game-fps { font-size: 10px; color: var(--text-muted); min-width: 60px; text-align: right; }
-  .game-notes { font-size: 9px; color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-fps { font-size: 10px; color: var(--text-muted); text-align: right; white-space: nowrap; }
+  .game-notes { font-size: 9px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+  /* Modal overlay — shared with detail modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-content { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; min-width: 280px; max-width: 90vw; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  .game-modal { width: min(520px, 90vw); max-height: 75vh; }
 
   /* Module list */
   .module-list { display: flex; flex-direction: column; gap: 3px; }
