@@ -388,7 +388,7 @@
 
 <style>
 /* ═══ LANDING PAGE STYLES ═══ */
-.lp { background: #06060A; color: #E4E4E7; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+.lp { background: #06060A; color: #E4E4E7; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; min-height: 100vh; }
 
 /* ── Animations ── */
 @keyframes lpFadeUp {
@@ -407,7 +407,7 @@
   0%, 100% { translate: -50% 0; }
   50% { translate: -50% 8px; }
 }
-[data-observe] { opacity: 0; translate: 0 20px; transition: opacity .6s ease-out, translate .6s ease-out; }
+[data-observe] { transition: opacity .6s ease-out, translate .6s ease-out; }
 [data-observe].lp-visible { opacity: 1; translate: 0 0; }
 
 /* ── Nav ── */
@@ -586,7 +586,7 @@
 .lp-footer-copy { max-width: 800px; margin: 24px auto 0; text-align: center; font-size: 11px; color: #3F3F46; }
 
 @keyframes bounce { 0%,100% { translate: -50% 0; } 50% { translate: -50% 8px; } }
-[data-observe] { opacity: 0; translate: 0 20px; transition: opacity .6s ease-out, translate .6s ease-out; }
+[data-observe] { transition: opacity .6s ease-out, translate .6s ease-out; }
 [data-observe].lp-visible { opacity: 1; translate: 0 0; }
 </style>
 {:else}
