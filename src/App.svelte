@@ -8,7 +8,6 @@
   )
   let version = $state('')
   let isTauri = $state(false)
-  let showLanding = $state(true)
 
   $effect(() => {
     // Preserve mode on switch
@@ -19,7 +18,6 @@
     // Detect Tauri context
     if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
       isTauri = true
-      showLanding = false
       import('@tauri-apps/api/core').then(({ invoke }) => {
         invoke<string>('get_version').then(v => version = v).catch(() => {})
       })
@@ -27,8 +25,8 @@
   })
 </script>
 
-{#if !isTauri && showLanding}
-  <!-- Landing page for web/Vercel -->
+{#if !isTauri}
+  <!-- Landing page for web/Vercel (static, no app) -->
   <div class="landing">
     <div class="landing-content">
       <div class="landing-logo">
@@ -49,7 +47,7 @@
       </div>
       <div class="landing-actions">
         <a class="btn btn-primary" href="https://github.com/rito-1ura/fairybench" target="_blank">View on GitHub</a>
-        <button class="btn btn-outline" onclick={() => { showLanding = false; try { import('@tauri-apps/api/core') } catch {} }}>Enter App</button>
+        <a class="btn btn-download" href="https://github.com/rito-1ura/fairybench/releases" target="_blank">Download for Windows</a>
       </div>
       <p class="landing-footer">Built with Rust + Tauri 2 + Svelte 5 + wgpu</p>
     </div>
@@ -76,7 +74,10 @@
   .landing-features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 32px; text-align: left; }
   .lf-card { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; color: var(--text-primary); }
   .lf-card svg { flex-shrink: 0; color: var(--accent); }
-  .landing-actions { display: flex; gap: 12px; justify-content: center; }
-  .landing-actions .btn { padding: 10px 24px; }
+  .landing-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .landing-actions .btn { padding: 10px 24px; font-size: 13px; }
+  .btn-download { background: var(--accent); color: #fff; border-radius: var(--radius); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; }
+  .btn-download:hover { opacity: .85; }
   .landing-footer { font-size: 11px; color: var(--text-muted); margin-top: 32px; }
+  @media (max-width: 480px) { .landing-features { grid-template-columns: 1fr; } }
 </style>
