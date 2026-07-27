@@ -387,9 +387,11 @@
 
     <!-- Panel Grid -->
     <div class="panel-grid">
-      <!-- Metrics Panel -->
-      <div class="panel">
-        <div class="panel-header">
+      <!-- Modules + Thermal row (8:2) -->
+      <div class="mod-thermal-row">
+        <!-- Modules Panel -->
+        <div class="panel mod-panel">
+          <div class="panel-header">
           <span class="panel-title">{@html svgs.chart} Modules</span>
           <span class="panel-badge">{running ? 'streaming' : result ? 'latest' : 'standby'}</span>
         </div>
@@ -412,13 +414,13 @@
                   {:else if mod.name === 'Storage-Throughput'}
                     <DiskResult score={mod.score} label={mod.label} />
                   {:else if mod.name === 'Cpu-Hash'}
-                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Hash Throughput</span><span class="mi-val">{mod.label}</span></div></div>
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Hash Throughput</span><span class="mi-val">{formatShort(mod.score)} {mod.label}</span></div></div>
                   {:else if mod.name === 'Cpu-Compress'}
-                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Compress Speed</span><span class="mi-val">{mod.label}</span></div></div>
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Compress Speed</span><span class="mi-val">{formatShort(mod.score)} {mod.label}</span></div></div>
                   {:else if mod.name === 'Cpu-Sort'}
-                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Sort Rate</span><span class="mi-val">{mod.label}</span></div></div>
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">Sort Rate</span><span class="mi-val">{formatShort(mod.score)} {mod.label}</span></div></div>
                   {:else if mod.name === 'Cpu-Float'}
-                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">FP MATH</span><span class="mi-val">{mod.label}</span></div></div>
+                    <div class="module-info-card"><span class="mi-icon">{@html svgs.cpu}</span><div class="mi-body"><span class="mi-name">FP MATH</span><span class="mi-val">{formatShort(mod.score)} {mod.label}</span></div></div>
                   {/if}
                 {/if}
               {/each}
@@ -546,10 +548,13 @@
             </div>
           {/if}
         </div>
-      </div>
+      </div><!-- end thermal panel -->
 
-      <!-- Score Panel -->
-      <div class="panel">
+      <!-- Close mod-thermal-row -->
+    </div>
+
+    <!-- Score Panel -->
+    <div class="panel">
         <div class="panel-header">
           <span class="panel-title">{@html svgs.bolt} Score</span>
           <span class="panel-badge">FairyScore</span>
@@ -739,10 +744,10 @@
   @keyframes fadeInItem { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
 
   /* Panel Grid */
-  .panel-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 4px;
-  }
+  .panel-grid { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+  .mod-thermal-row { display: flex; gap: 8px; flex: 1; min-height: 0; }
+  .mod-panel { flex: 8; min-width: 0; }
+  .mod-thermal-row > .panel:last-child { flex: 2; min-width: 0; }
   .panel {
     background: var(--bg-secondary); border: 1px solid var(--border);
     border-radius: var(--radius-lg); overflow: hidden;
