@@ -18,6 +18,8 @@
     formatScore: (v: number) => string
   } = $props()
 
+  import { t } from '../i18n'
+
   const formatLocalDate = (str: string): string => {
     const d = new Date(str);
     if (isNaN(d.getTime())) return str;
@@ -55,47 +57,11 @@
       <div class="divider"></div>
     {/if}
 
-    <!-- History chart: SVG bars + line overlay -->
-    {#if history.length > 1}
-      <div class="chart-section">
-        <div class="chart-title">スコア推移</div>
-        <svg class="chart-svg" viewBox="0 0 {chartWidth} {chartHeight}" style="width:100%;height:{chartHeight}px">
-          <!-- Bars -->
-          {#each chartData() as item, i (item.run_id)}
-            <rect class="chart-bar" x={(i / Math.max(chartData().length - 1, 1)) * chartWidth + 2}
-                  y={chartHeight - item.score * chartHeight * 0.85}
-                  width={Math.max(3, chartWidth / chartData().length - 4)}
-                  height={item.score * chartHeight * 0.85}
-                  rx="2" ry="2"
-                  role="presentation"
-                  fill="var(--accent)" fill-opacity="0.5"
-            />
-          {/each}
-          <!-- Line overlay -->
-          <polyline class="chart-line"
-            points={chartData().map((item, i) =>
-              `${(i / Math.max(chartData().length - 1, 1)) * chartWidth + chartWidth / (chartData().length * 2)},${chartHeight - item.score * chartHeight * 0.85}`
-            ).join(' ')}
-            fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          />
-          <!-- Dots on line -->
-          {#each chartData() as item, i (item.run_id)}
-            <circle class="chart-dot"
-              cx={(i / Math.max(chartData().length - 1, 1)) * chartWidth + chartWidth / (chartData().length * 2)}
-              cy={chartHeight - item.score * chartHeight * 0.85}
-              r="3" fill="var(--accent)" stroke="var(--bg-primary)" stroke-width="1.5"
-            />
-          {/each}
-        </svg>
-      </div>
-      <div class="divider"></div>
-    {/if}
-
     <!-- History list -->
     <div class="history-section">
-      <div class="history-title">実行履歴</div>
+      <div class="history-title">{t('run_history')}</div>
       {#if history.length === 0}
-        <div class="empty-state">まだ実行結果がありません</div>
+        <div class="empty-state">{t('empty_history')}</div>
       {:else}
         <div class="history-list">
           {#each history as run, i}

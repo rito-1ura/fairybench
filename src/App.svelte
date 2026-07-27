@@ -3,10 +3,17 @@
   import SimpleMode from './lib/SimpleMode.svelte'
   import DashboardMode from './lib/DashboardMode.svelte'
 
-  let mode = $state<'simple' | 'dashboard'>('simple')
+  let mode = $state<'simple' | 'dashboard'>(
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('mode') as 'simple' | 'dashboard' : null) || 'simple'
+  )
   let version = $state('')
   let isTauri = $state(false)
   let showLanding = $state(true)
+
+  $effect(() => {
+    // Preserve mode on switch
+    localStorage.setItem('mode', mode)
+  })
 
   $effect(() => {
     // Detect Tauri context

@@ -140,7 +140,7 @@
   let chartData = $state<{time: number; score: number}[]>([])
 
   // Formatters
-  const formatScore = (v: number): string => v.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  const formatScore = (v: number): string => i18nFormatScore(v)
   const formatTime = (s: number): string => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
   const formatShort = (v: number): string => {
     if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'
@@ -409,10 +409,14 @@
               <span class="lb-date">{new Date(run.executed_at).toLocaleDateString('ja-JP', {month:'short', day:'numeric'})}</span>
             </div>
           {/each}
-          {/if}
-          </div>
-          {/if}
-          </aside>
+        {/if}
+      </div>
+      {/if}
+    </aside>
+    <!-- Collapsed LB button (always visible) -->
+    <button class="lb-toggle-btn" onclick={() => lbCollapsed = false} title="Show Leaderboard" style="display:{lbCollapsed ? 'flex' : 'none'}">
+      {@html svgs.trophy}
+    </button>
 
     <!-- Panel Grid -->
     <div class="panel-grid">
@@ -762,7 +766,14 @@
     margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 3px;
     background: var(--bg-tertiary); color: var(--text-muted);
   }
-  .lang-toggle { display: flex; gap: 2px; }
+  .lb-toggle-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; flex-shrink: 0;
+    background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--accent); cursor: pointer; transition: all .15s;
+  }
+  .lb-toggle-btn:hover { background: var(--bg-tertiary); }
+  .lang-toggle { display: flex; gap: 2px; margin-left: 8px; }
   .lang-toggle .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .sidebar-body { flex: 1; overflow-y: auto; padding: 6px; }
   .empty-leaderboard { font-size: 11px; color: var(--text-muted); text-align: center; padding: 24px 8px; }
