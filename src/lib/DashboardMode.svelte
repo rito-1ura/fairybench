@@ -2,6 +2,8 @@
   import { invoke } from '@tauri-apps/api/core'
   import { listen } from '@tauri-apps/api/event'
   import StatsPanel from './components/StatsPanel.svelte'
+  import Scene3DView from './components/Scene3DView.svelte'
+  import DiskView from './components/DiskView.svelte'
 
   interface SubScore { module_name: string; raw_score: number; normalized_score: number }
   interface RunResult {
@@ -413,6 +415,31 @@
           {/if}
         </div>
       </div>
+
+      <!-- Real-time Module Visualization -->
+      {#if running}
+        {#if currentModule.startsWith('Render-3DScene')}
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">{@html svgs.gpu} 3D Scene Render</span>
+              <span class="panel-badge live"><span class="status-dot"></span> Live</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <Scene3DView {running} />
+            </div>
+          </div>
+        {:else if currentModule.startsWith('Storage-Throughput')}
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">{@html svgs.storage} Disk Throughput</span>
+              <span class="panel-badge live"><span class="status-dot"></span> Live</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <DiskView {running} />
+            </div>
+          </div>
+        {/if}
+      {/if}
 
       <!-- Thermal Panel -->
       <div class="panel">
