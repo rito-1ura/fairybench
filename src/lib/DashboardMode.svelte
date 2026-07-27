@@ -528,29 +528,6 @@
         </div>
       </div>
 
-      <!-- Game Analysis Panel (now in popup modal below) -->
-      {#if showGameAnalysis && gameAnalysis}
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M20 12l-8 8-8-8M20 6l-8 8-8-8"/></svg>
-              Game Analysis
-            </span>
-            <button class="btn btn-xs btn-outline" onclick={() => { showGameAnalysis = false; gameAnalysis = null }}>Close</button>
-          </div>
-          <div class="panel-body" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
-            {#each gameAnalysis as g}
-              <div class="game-entry" class:status-pass={g.status_jp === '快適'} class:status-ok={g.status_jp === '可'} class:status-limit={g.status_jp === '限界'} class:status-no={g.status_jp === '不可'}>
-                <div class="game-title">{g.title}</div>
-                <div class="game-status" class:game-pass={g.status_jp === '快適'} class:game-ok={g.status_jp === '可'} class:game-limit={g.status_jp === '限界'} class:game-no={g.status_jp === '不可'}>{g.status_jp}</div>
-                <div class="game-fps">{g.fps_est}</div>
-                <div class="game-notes">{g.notes}</div>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/if}
-
       <!-- Stats Panel -->
       <StatsPanel {result} {history} {deleteRun} {formatScore} />
     </div>
