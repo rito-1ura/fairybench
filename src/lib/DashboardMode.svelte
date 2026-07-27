@@ -63,6 +63,10 @@
   // Collapsible panels
   let lbCollapsed = $state(false)
   let showStatsPanel = $state(false)
+  let onlineLb = $state<{score:number; cpu_name:string; gpu_name:string; timestamp:string}[]>([])
+  let lbTab: 'local' | 'global' = $state('local')
+  let lbOnlineLoading = $state(false)
+  let lastSubmitStatus = $state('')
   let lastAddedScore = $state(0)
   let lastAddedName = $state('')
 
@@ -274,6 +278,19 @@
         currentModule = 'Complete'
         currentRunScore = res.overall_raw
         await loadHistory()
+        // Submit to online leaderboard
+        try {
+          const cpu = deviceInfo?.cpu_name || ''
+          const gpu = deviceInfo?.adapter_name || ''
+          const mem = deviceInfo?.total_memory_gb || 0
+          const resp = await fetch('https://fairybench.vercel.app/api/leaderboard', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score: Math.round(res.overall_raw), run_id: res.run_id, cpu_name: cpu, gpu_name: gpu, memory_gb: mem, version })
+          })
+          const j = await resp.json()
+          lastSubmitStatus = j.ok ? `Online #${j.rank}/${j.total}` : 'Submit failed'
+        } catch { lastSubmitStatus = 'Offline' }
+        fetchOnlineLb()
       }
     } catch (e) {
       if (!destroyed) {
@@ -313,6 +330,19 @@
       showDetailModal = true
     } catch {}
   }
+
+  // Online leaderboard
+  const LB_API = 'https://fairybench.vercel.app/api/leaderboard'
+  async function fetchOnlineLb() {
+    lbOnlineLoading = true
+    try {
+      const resp = await fetch(LB_API + '?limit=20')
+      const j = await resp.json()
+      if (j.ok) onlineLb = j.entries
+    } catch { /* offline */ }
+    lbOnlineLoading = false
+  }
+  $effect(() => { fetchOnlineLb() })
 
   // Derived: leaderboard from history sorted by score
   let leaderboard = $derived(
@@ -388,34 +418,59 @@
       </div>
       {#if !lbCollapsed}
       <div class="sidebar-body">
-        {#if leaderboard.length === 0}
-          <div class="empty-leaderboard">Run a benchmark to appear here</div>
-        {:else}
-          {#each leaderboard as run, i (run.run_id)}
-            <div class="lb-entry" class:current={run.run_id === result?.run_id} style="animation-delay: {i * 30}ms"
-                 onclick={() => showRunDetail(run)} role="button" tabindex="-1"
-                 onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showRunDetail(run) } }}>
-              <span class="lb-rank" class:gold={i===0} class:silver={i===1} class:bronze={i===2}>
-                {#if i === 0}
-                  {@html svgs.trophy}
-                {:else}
-                  #{i+1}
-                {/if}
-              </span>
-              <div class="lb-info">
-                <span class="lb-score">{formatScore(run.overall_raw)}</span>
-                <span class="lb-cv">CV: {formatPct(run.cv)}</span>
+        <!-- Tabs -->
+        <div class="lb-tabs">
+          <button class="lb-tab" class:active={lbTab==='local'} onclick={() => lbTab='local'}>Local</button>
+          <button class="lb-tab" class:active={lbTab==='global'} onclick={() => lbTab='global'}>Global</button>
+        </div>
+        {#if lbTab === 'local'}
+          {#if leaderboard.length === 0}
+            <div class="empty-leaderboard">{t('empty_leaderboard')}</div>
+          {:else}
+            {#each leaderboard as run, i (run.run_id)}
+              <div class="lb-entry" class:current={run.run_id === result?.run_id} style="animation-delay: {i * 30}ms"
+                   onclick={() => showRunDetail(run)} role="button" tabindex="-1"
+                   onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showRunDetail(run) } }}>
+                <span class="lb-rank" class:gold={i===0} class:silver={i===1} class:bronze={i===2}>
+                  {#if i === 0}
+                    {@html svgs.trophy}
+                  {:else}
+                    #{i+1}
+                  {/if}
+                </span>
+                <div class="lb-info">
+                  <span class="lb-score">{formatScore(run.overall_raw)}</span>
+                  <span class="lb-cv">CV: {formatPct(run.cv)}</span>
+                </div>
+                <span class="lb-date">{new Date(run.executed_at).toLocaleDateString('ja-JP', {month:'short', day:'numeric'})}</span>
               </div>
-              <span class="lb-date">{new Date(run.executed_at).toLocaleDateString('ja-JP', {month:'short', day:'numeric'})}</span>
-            </div>
-          {/each}
+            {/each}
+          {/if}
+        {:else}
+          {#if onlineLb.length === 0}
+            <div class="empty-leaderboard">{lbOnlineLoading ? 'Loading...' : 'No global data yet'}</div>
+          {:else}
+            {#each onlineLb as entry, i}
+              <div class="lb-entry" style="animation-delay: {i * 30}ms">
+                <span class="lb-rank" class:gold={i===0} class:silver={i===1} class:bronze={i===2}>#{i+1}</span>
+                <div class="lb-info">
+                  <span class="lb-score">{formatScore(entry.score)}</span>
+                  <span class="lb-cv">{entry.cpu_name || entry.gpu_name || ''}</span>
+                </div>
+                <span class="lb-date">{new Date(entry.timestamp).toLocaleDateString('ja-JP', {month:'short', day:'numeric'})}</span>
+              </div>
+            {/each}
+          {/if}
+        {/if}
+        {#if lastSubmitStatus}
+          <div class="lb-submit-status">{lastSubmitStatus}</div>
         {/if}
       </div>
       {/if}
     </aside>
     <!-- Collapsed LB button (always visible) -->
     <button class="lb-toggle-btn" onclick={() => lbCollapsed = false} title="Show Leaderboard" style="display:{lbCollapsed ? 'flex' : 'none'}">
-      {@html svgs.trophy}
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M10 4L6 8l4 4"/></svg>
     </button>
 
     <!-- Panel Grid -->
@@ -776,6 +831,14 @@
   .lang-toggle { display: flex; gap: 2px; margin-left: 8px; }
   .lang-toggle .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .sidebar-body { flex: 1; overflow-y: auto; padding: 6px; }
+  .lb-tabs { display: flex; gap: 2px; margin-bottom: 6px; }
+  .lb-tab {
+    flex: 1; padding: 4px 6px; font-size: 10px; text-align: center;
+    background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-muted); cursor: pointer; transition: all .15s;
+  }
+  .lb-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .lb-submit-status { font-size: 9px; color: var(--text-muted); text-align: center; padding: 4px 0; }
   .empty-leaderboard { font-size: 11px; color: var(--text-muted); text-align: center; padding: 24px 8px; }
 
   .lb-entry {
