@@ -4,6 +4,8 @@
   import StatsPanel from './components/StatsPanel.svelte'
   import Scene3DView from './components/Scene3DView.svelte'
   import DiskView from './components/DiskView.svelte'
+  import Scene3DResult from './components/Scene3DResult.svelte'
+  import DiskResult from './components/DiskResult.svelte'
 
   interface SubScore { module_name: string; raw_score: number; normalized_score: number }
   interface RunResult {
@@ -400,6 +402,13 @@
                     <span class="module-pulse"></span>
                   {/if}
                 </div>
+                {#if !running}
+                  {#if mod.name === 'Render-3DScene'}
+                    <Scene3DResult score={mod.score} label={mod.label} />
+                  {:else if mod.name === 'Storage-Throughput'}
+                    <DiskResult score={mod.score} label={mod.label} />
+                  {/if}
+                {/if}
               {/each}
             </div>
             {#if running}
