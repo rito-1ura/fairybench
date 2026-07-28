@@ -86,6 +86,30 @@
     { name: 'CPU Float', cat: 'CPU', desc: '1024×128 FP matrix multiply.', color: '#FB923C' },
   ]
 
+  const moduleNames: Record<string, {en: string; ja: string; catEn: string; catJa: string}> = {
+    '3D Raster': { en: '3D Raster', ja: '3Dラスタライズ', catEn: 'GPU', catJa: 'GPU' },
+    '3D Ray Trace': { en: '3D Ray Trace', ja: '3Dレイトレース', catEn: 'GPU', catJa: 'GPU' },
+    '3D Procedural': { en: '3D Procedural', ja: '3Dプロシージャル', catEn: 'GPU', catJa: 'GPU' },
+    '3D Scene': { en: '3D Scene', ja: '3Dシーン', catEn: 'GPU', catJa: 'GPU' },
+    'Storage IO': { en: 'Storage IO', ja: 'ストレージIO', catEn: 'Storage', catJa: 'ストレージ' },
+    'Memory BW': { en: 'Memory BW', ja: 'メモリ帯域', catEn: 'RAM', catJa: 'RAM' },
+    'AI Inference': { en: 'AI Inference', ja: 'AI推論', catEn: 'AI', catJa: 'AI' },
+    'AI Generative': { en: 'AI Generative', ja: 'AI生成', catEn: 'AI', catJa: 'AI' },
+    'CPU Hash': { en: 'CPU Hash', ja: 'CPUハッシュ', catEn: 'CPU', catJa: 'CPU' },
+    'CPU Compress': { en: 'CPU Compress', ja: 'CPU圧縮', catEn: 'CPU', catJa: 'CPU' },
+    'CPU Sort': { en: 'CPU Sort', ja: 'CPUソート', catEn: 'CPU', catJa: 'CPU' },
+    'CPU Float': { en: 'CPU Float', ja: 'CPU浮動小数点', catEn: 'CPU', catJa: 'CPU' },
+  }
+  function modName(m: {name: string; desc: string}): string {
+    return lpLang === 'ja' ? (moduleNames[m.name]?.ja || m.name) : m.name
+  }
+  function modDesc(m: {name: string; desc: string}): string {
+    return lpLang === 'ja' ? (i18n_lp[lpLang].modDescs?.[m.name] || m.desc) : m.desc
+  }
+  function modCat(m: {name: string; cat: string}): string {
+    return lpLang === 'ja' ? (moduleNames[m.name]?.catJa || m.cat) : moduleNames[m.name]?.catEn || m.cat
+  }
+
   const i18n_lp: Record<string, Record<string, string>> = {
     en: {
       badge: 'v0.2.0 — Desktop Benchmark Suite',
@@ -111,14 +135,14 @@
         {t:'Thermal Monitoring',d:'Real-time CPU/GPU temperature, power, and clock sampled every 2 seconds.'},
       ],
       dl_t: 'Ready to benchmark?', dl_s: 'Download the latest release for Windows. Portable, no installer.',
-      dl_b: 'Download v0.2.0', dl_gh: 'View on GitHub', dl_m: 'Windows 10/11 · ~8 MB · Open Source (MIT)',
+      dl_b: 'Download v0.2.0', dl_gh: 'View on GitHub', dl_m: 'Windows 10/11 · ~8 MB · Open Source (Apache 2.0)',
       faq_l: 'FAQ', faq_t: 'Common questions',
       faqs: [
-        {q:'Is FairyBench free?',a:'Yes. Fully open source under MIT. No ads, no telemetry, no paywalls.'},
+        {q:'Is FairyBench free?',a:'Yes. Fully open source under Apache 2.0. No ads, no telemetry, no paywalls.'},
         {q:'What hardware does it support?',a:'Windows 10/11 with wgpu-capable GPU (D3D12/Vulkan/Metal). NVMe SSDs recommended.'},
         {q:'How long does a benchmark take?',a:'Full suite 3-5 min. Individual modules 15-60 sec.'},
-        {q:'Can I compare results online?',a:'Yes! Auto-submits to the global leaderboard at fairybench.vercel.app.'},
-        {q:'Does it affect system performance?',a:"Benchmarks are read-only. Thermal monitoring is passive observation."},
+        {q:'Can I compare results online?',a:'Yes! Scores are automatically shared to the global leaderboard when benchmarks run. Results appear in the desktop app.'},
+        {q:'Does it affect system performance?',a:"Benchmarks are read-only. They measure, they don't modify. Thermal monitoring is passive observation."},
       ],
       show_l: 'Desktop App Preview', show_t: 'See it in action', show_s: 'Real-time dashboard with live scoring, thermal monitoring, and module telemetry.',
       ft: 'Open-source PC benchmark suite. Rust + Tauri 2 + Svelte 5 + wgpu.',
@@ -147,17 +171,31 @@
         {t:'温度監視',d:'CPU/GPU温度、消費電力、クロックを2秒間隔でサンプリング。'},
       ],
       dl_t: 'ベンチマークを始めましょう', dl_s: 'Windows向け最新版。インストーラー不要のポータブル。',
-      dl_b: 'v0.2.0 をダウンロード', dl_gh: 'GitHubで見る', dl_m: 'Windows 10/11 · ~8 MB · オープンソース (MIT)',
+      dl_b: 'v0.2.0 をダウンロード', dl_gh: 'GitHubで見る', dl_m: 'Windows 10/11 · ~8 MB · オープンソース (Apache 2.0)',
       faq_l: 'よくある質問', faq_t: 'よくある質問',
       faqs: [
-        {q:'FairyBenchは無料ですか？',a:'はい。MITライセンスの完全オープンソース。'},
+        {q:'FairyBenchは無料ですか？',a:'はい。Apache 2.0ライセンスの完全オープンソース。広告、テレメトリ、有料化はありません。'},
         {q:'対応ハードウェアは？',a:'Windows 10/11、wgpu対応GPU。NVMe SSD推奨。'},
         {q:'所要時間は？',a:'フルスイート3-5分。個別15-60秒。'},
-        {q:'オンラインで比較できますか？',a:'はい。fairybench.vercel.appでランキングを確認。'},
-        {q:'システムに影響は？',a:'ベンチマークは読み取り専用。変更は加えません。'},
+        {q:'オンラインで比較できますか？',a:'はい。ベンチマーク実行時に自動的にグローバルリーダーボードに送信されます。デスクトップアプリ内で結果を確認できます。'},
+        {q:'システムに影響は？',a:'ベンチマークは読み取り専用。測定のみ行い変更は加えません。温度監視は受動的観測です。'},
       ],
       show_l: 'デスクトップアプリプレビュー', show_t: '実際の動作画面', show_s: 'リアルタイムダッシュボード。ライブスコアリング、温度監視。',
       ft: 'オープンソースPCベンチマーク。Rust + Tauri 2 + Svelte 5 + wgpu。',
+      modDescs: {
+        '3D Raster': 'wgpuによるGPUラスタライゼーション。頂点シェーダー、フラグメント処理、ドローコールスループット。',
+        '3D Ray Trace': 'ハードウェア高速化レイトレーシング。BVHトラバーサル性能。',
+        '3D Procedural': 'GPUコンピュートシェーダーによる地形生成。ノイズアルゴリズムとメッシュ構築。',
+        '3D Scene': 'ライティング、シャドウ、ポストプロセスを備えた3Dシーンレンダリング。',
+        'Storage IO': 'NVMeシーケンシャル/ランダム読み書き。IOPS、レイテンシ。',
+        'Memory BW': 'メモリ読み書き/コピー帯域。キャッシュ階層対応（L1/L2/L3/RAM）。',
+        'AI Inference': 'トランスフォーマー推論パイプライン。トークン生成スループット。',
+        'AI Generative': '生成モデルバッチ推論。並列プロンプト処理。',
+        'CPU Hash': 'SHA-256ハッシュスループット。整数ALU性能。',
+        'CPU Compress': 'LZ4ランレングス圧縮。データ変換スループット。',
+        'CPU Sort': 'クイックソート200万要素。メモリアクセスパターン性能。',
+        'CPU Float': '1024×128 FP行列乗算。FMAパイプライン。',
+      },
     },
   }
 </script>
@@ -253,14 +291,14 @@
     <div class="lp-cat-block" class:lp-visible={visibleSections.has('modules')}>
       <div class="lp-cat-head">
         <div class="lp-cat-dot" style="background: {modules.find(m => m.cat === cat)?.color || '#818CF8'}"></div>
-        <span>{cat}</span>
+        <span>{lpLang === 'ja' ? ({GPU:'GPU',Storage:'ストレージ',RAM:'RAM',AI:'AI',CPU:'CPU'}[cat] || cat) : cat}</span>
         <span class="lp-cat-count">{modules.filter(m => m.cat === cat).length}</span>
       </div>
       {#each modules.filter(m => m.cat === cat) as mod, i}
         <div class="lp-mod-row" style="transition-delay: {i * 0.04}s">
-          <div class="lp-mod-name">{mod.name}</div>
-          <div class="lp-mod-desc">{mod.desc}</div>
-          <div class="lp-mod-tag" style="background: {mod.color}15; color: {mod.color}; border-color: {mod.color}30">{mod.cat}</div>
+          <div class="lp-mod-name">{modName(mod)}</div>
+          <div class="lp-mod-desc">{modDesc(mod)}</div>
+          <div class="lp-mod-tag" style="background: {mod.color}15; color: {mod.color}; border-color: {mod.color}30">{modCat(mod)}</div>
         </div>
       {/each}
     </div>
@@ -296,39 +334,6 @@
   </div>
 </section>
 
-<!-- ── APP SHOWCASE ── -->
-<section class="lp-showcase" id="showcase" data-observe="showcase">
-  <div class="lp-sec-label">{lp('show_l')}</div>
-  <h2 class="lp-sec-title">{lp('show_t')}</h2>
-  <p class="lp-sec-sub">{lp('show_s')}</p>
-  <div class="lp-showcase-screens" class:lp-visible={visibleSections.has('showcase')}>
-    <!-- Dashboard mockup -->
-    <div class="lp-mockup">
-      <div class="lp-mockup-bar">
-        <div class="lp-mockup-dots"><span></span><span></span><span></span></div>
-        <span class="lp-mockup-title">FairyBench — Dashboard</span>
-      </div>
-      <div class="lp-mockup-body">
-        <div class="lp-mock-col">
-          <div class="lp-mock-card"><div class="lp-mock-label">Final Score</div><div class="lp-mock-val" style="color:var(--accent)">125,678</div><div class="lp-mock-bar" style="width:80%"></div></div>
-          <div class="lp-mock-card"><div class="lp-mock-label">95% CI</div><div class="lp-mock-val">122,450 – 128,900</div><div class="lp-mock-bar" style="width:70%"></div></div>
-        </div>
-        <div class="lp-mock-col">
-          <div class="lp-mock-card"><div class="lp-mock-label">CPU Hash</div><div class="lp-mock-val">42,315</div><div class="lp-mock-bar" style="width:65%"></div></div>
-          <div class="lp-mock-card"><div class="lp-mock-label">3D Scene</div><div class="lp-mock-val">18,240</div><div class="lp-mock-bar" style="width:55%"></div></div>
-          <div class="lp-mock-card"><div class="lp-mock-label">Memory BW</div><div class="lp-mock-val">31,500</div><div class="lp-mock-bar" style="width:72%"></div></div>
-        </div>
-        <div class="lp-mock-col">
-          <div class="lp-mock-graph">
-            <svg viewBox="0 0 100 40" style="width:100%;height:100%"><polyline points="0,35 15,28 30,30 45,18 60,22 75,10 90,14 100,8" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".6"/><polyline points="0,35 15,28 30,30 45,18 60,22 75,10 90,14 100,8" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="100" cy="8" r="2" fill="var(--accent)"/></svg>
-          </div>
-          <div class="lp-mock-temp"><span>CPU 62°C</span><span>GPU 58°C</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ── DOWNLOAD ── -->
 <section class="lp-download" id="download" data-observe="download">
   <div class="lp-dl-card" class:lp-visible={visibleSections.has('download')}>
@@ -351,10 +356,10 @@
   <h2 class="lp-sec-title">{lp('faq_t')}</h2>
   <div class="lp-faq-list" class:lp-visible={visibleSections.has('faq')}>
     {#each i18n_lp[lpLang].faqs as item}
-      <details class="lp-faq-item">
-        <summary><span>{item.q}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="6 9 12 15 18 9"/></svg></summary>
-        <p>{item.a}</p>
-      </details>
+      <div class="lp-faq-item">
+        <div class="lp-faq-q">{item.q}</div>
+        <div class="lp-faq-a">{item.a}</div>
+      </div>
     {/each}
   </div>
 </section>
@@ -381,7 +386,7 @@
       <a href="https://wgpu.rs" target="_blank">wgpu</a>
     </div>
   </div>
-  <div class="lp-footer-copy">&copy; {new Date().getFullYear()} rito-1ura &middot; MIT License</div>
+  <div class="lp-footer-copy">&copy; {new Date().getFullYear()} rito-1ura &middot; Apache 2.0</div>
 </footer>
 
 </div>
@@ -560,18 +565,11 @@
 .lp-faq-list { text-align: left; max-width: 560px; margin: 0 auto; }
 .lp-faq-list.lp-visible .lp-faq-item { animation: lpFadeUp .4s ease-out forwards; }
 .lp-faq-item {
-  border-bottom: 1px solid rgba(255,255,255,.06); padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06); padding: 16px 0;
   opacity: 0; transition-delay: inherit;
 }
-.lp-faq-item summary {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 13px; font-weight: 500; color: #E4E4E7; cursor: pointer; padding: 2px 0;
-  list-style: none;
-}
-.lp-faq-item summary::-webkit-details-marker { display: none; }
-.lp-faq-item[open] summary svg { rotate: 180deg; }
-.lp-faq-item summary svg { transition: rotate .2s; color: #52525B; }
-.lp-faq-item p { font-size: 12px; color: #A1A1AA; line-height: 1.6; margin: 8px 0 0; }
+.lp-faq-q { font-size: 13px; font-weight: 500; color: #E4E4E7; margin-bottom: 4px; }
+.lp-faq-a { font-size: 12px; color: #A1A1AA; line-height: 1.6; }
 
 /* ── Footer ── */
 .lp-footer { border-top: 1px solid rgba(255,255,255,.06); padding: 40px 24px 24px; }
