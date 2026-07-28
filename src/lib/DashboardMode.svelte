@@ -895,7 +895,7 @@
                 {licenseVerifying ? 'Verifying...' : 'Activate'}
               </button>
             </div>
-            <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">No key? <a href="https://gumroad.com/rito-ura" target="_blank" style="color:var(--accent);text-decoration:none">Purchase Business License</a></p>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">No key? <span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick={() => window.open('https://gumroad.com/rito-1ura', '_blank')}>Purchase Business License</span></p>
           {:else}
             <!-- Generate tab -->
             <div style="text-align:center;margin-bottom:16px">
