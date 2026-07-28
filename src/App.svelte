@@ -37,9 +37,65 @@
     return v || i18n_lp.en[key] || key
   }
 
-  // Scroll observer for animations
+  // Landing page state — unused in Tauri
   let scrolled = $state(0)
   let visibleSections = $state<Set<string>>(new Set())
+
+  // Business license
+  let usageType = $state<'personal' | 'business' | ''>('')
+  let licenseKey = $state('')
+  let licenseInfo = $state<{verified:boolean; name:string; email:string; expires_at:string; tier:string} | null>(null)
+  let licenseError = $state('')
+  let licenseVerifying = $state(false)
+  let showBusinessDialog = $state(false)
+
+  $effect(() => {
+    // Restore saved usage type
+    const saved = localStorage.getItem('fb_usage')
+    if (saved === 'personal') {
+      usageType = 'personal'; showBusinessDialog = false
+    } else if (saved === 'business') {
+      usageType = 'business'
+      const savedInfo = localStorage.getItem('fb_license')
+      if (savedInfo) {
+        try {
+          const info = JSON.parse(savedInfo)
+          if (info.verified) {
+            licenseInfo = info; showBusinessDialog = false
+          } else {
+            showBusinessDialog = true
+          }
+        } catch { showBusinessDialog = true }
+      } else {
+        showBusinessDialog = true
+      }
+    } else if (!isTauri) {
+      usageType = 'personal' // web visitors are personal
+    } else {
+      showBusinessDialog = true
+    }
+  })
+
+  async function verifyLicense() {
+    if (!licenseKey.trim()) return
+    licenseVerifying = true; licenseError = ''
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const info = await invoke<{verified:boolean; name:string; email:string; expires_at:string; tier:string}>('verify_license_key', { key: licenseKey.trim() })
+      if (info.verified) {
+        licenseInfo = info
+        licenseError = ''
+        localStorage.setItem('fb_usage', 'business')
+        localStorage.setItem('fb_license', JSON.stringify(info))
+        showBusinessDialog = false
+      } else {
+        licenseError = `Invalid license: ${info.expires_at}`
+      }
+    } catch (e) {
+      licenseError = `Verification failed: ${e}`
+    }
+    licenseVerifying = false
+  }
 
   $effect(() => {
     if (isTauri) return
@@ -199,6 +255,47 @@
     },
   }
 </script>
+
+<!-- Business License Dialog (Tauri only) -->
+{#if isTauri && showBusinessDialog}
+<div class="biz-overlay">
+  <div class="biz-dialog">
+    {#if usageType === ''}
+      <!-- Step 1: Choose usage type -->
+      <div class="biz-badge">FairyBench</div>
+      <h2 class="biz-title">Select Usage Type</h2>
+      <p class="biz-sub">Choose how you will use this software.</p>
+      <div class="biz-choices">
+        <button class="biz-choice" onclick={() => { usageType = 'personal'; localStorage.setItem('fb_usage', 'personal'); showBusinessDialog = false }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span class="biz-choice-title">Personal</span>
+          <span class="biz-choice-sub">Free for personal, non-commercial use</span>
+        </button>
+        <button class="biz-choice" onclick={() => usageType = 'business'}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span class="biz-choice-title">Business</span>
+          <span class="biz-choice-sub">Requires a license key — includes priority support</span>
+        </button>
+      </div>
+      <p class="biz-legal">Personal use: all features included. Business use requires a paid license per the Apache 2.0 terms.</p>
+    {:else if usageType === 'business' && !licenseInfo?.verified}
+      <!-- Step 2: Enter license key -->
+      <div class="biz-badge">Business License</div>
+      <h2 class="biz-title">Enter Your License Key</h2>
+      <p class="biz-sub">Paste the key you received after purchasing on Gumroad / BOOTH.</p>
+      <input class="biz-input" type="text" placeholder="Paste license key here..." bind:value={licenseKey} />
+      {#if licenseError}<p class="biz-error">{licenseError}</p>{/if}
+      <div class="biz-actions">
+        <button class="biz-btn biz-btn-secondary" onclick={() => { usageType = ''; licenseKey = ''; licenseError = '' }}>Back</button>
+        <button class="biz-btn biz-btn-primary" onclick={verifyLicense} disabled={licenseVerifying || !licenseKey.trim()}>
+          {licenseVerifying ? 'Verifying...' : 'Activate License'}
+        </button>
+      </div>
+      <p class="biz-legal">Don't have a key? <a href="https://gumroad.com/rito-ura" target="_blank">Purchase a Business License</a></p>
+    {/if}
+  </div>
+</div>
+{/if}
 
 {#if !isTauri}
 <!-- ═══════════════════════════════════════ LANDING PAGE ═══════════════════════════════════════ -->
@@ -394,6 +491,52 @@
 <style>
 /* ═══ LANDING PAGE STYLES ═══ */
 .lp { background: #06060A; color: #E4E4E7; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; min-height: 100vh; }
+
+/* ═══ BUSINESS LICENSE DIALOG ═══ */
+.biz-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(6,6,10,.92); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.biz-dialog { max-width: 420px; width: 100%; text-align: center; }
+.biz-badge {
+  display: inline-block; font-size: 10px; font-weight: 700; color: var(--accent);
+  background: rgba(129,140,248,.12); padding: 4px 12px; border-radius: 6px;
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px;
+}
+.biz-title { font-size: 20px; font-weight: 700; color: #E4E4E7; margin-bottom: 8px; }
+.biz-sub { font-size: 13px; color: #A1A1AA; line-height: 1.5; margin-bottom: 24px; }
+.biz-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.biz-choice {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; cursor: pointer; transition: all .2s; text-align: left;
+  color: var(--accent);
+}
+.biz-choice:hover { background: rgba(255,255,255,.07); border-color: var(--accent); }
+.biz-choice-title { display: block; font-size: 14px; font-weight: 600; color: #E4E4E7; }
+.biz-choice-sub { display: block; font-size: 11px; color: #A1A1AA; margin-top: 2px; }
+.biz-legal { font-size: 11px; color: #52525B; line-height: 1.5; margin-top: 16px; }
+.biz-legal a { color: var(--accent); text-decoration: none; }
+.biz-legal a:hover { text-decoration: underline; }
+.biz-input {
+  width: 100%; padding: 10px 14px; font-size: 13px; font-family: monospace;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px; color: #E4E4E7; outline: none; transition: border-color .2s; margin-bottom: 12px;
+}
+.biz-input:focus { border-color: var(--accent); }
+.biz-input::placeholder { color: #52525B; }
+.biz-error { font-size: 12px; color: #F87171; margin-bottom: 12px; }
+.biz-actions { display: flex; gap: 8px; justify-content: center; }
+.biz-btn {
+  padding: 9px 20px; font-size: 13px; font-weight: 600; border-radius: 8px;
+  border: none; cursor: pointer; transition: all .2s;
+}
+.biz-btn-primary { background: var(--accent); color: #fff; }
+.biz-btn-primary:hover { opacity: .85; }
+.biz-btn-primary:disabled { opacity: .4; cursor: default; }
+.biz-btn-secondary { background: rgba(255,255,255,.06); color: #A1A1AA; }
+.biz-btn-secondary:hover { background: rgba(255,255,255,.1); color: #E4E4E7; }
 
 /* ── Animations ── */
 @keyframes lpFadeUp {

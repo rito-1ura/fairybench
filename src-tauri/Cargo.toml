@@ -27,3 +27,5 @@ uuid = { version = "1", features = ["v4"] }
 wgpu = "23"
 pollster = "0.4"
 bytemuck = { version = "1", features = ["derive"] }
+ed25519-dalek = { version = "2", features = ["pkcs8"] }
+base64 = "0.22"

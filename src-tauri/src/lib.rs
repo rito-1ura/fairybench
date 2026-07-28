@@ -1,4 +1,5 @@
 mod db;
+mod license;
 mod orchestrator;
 mod plugin;
 mod stats;
@@ -226,6 +227,11 @@ fn get_run_detail(state: State<AppState>, run_id: String) -> Result<Option<stats
     db.get_run_detail(&run_id).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn verify_license_key(key: String) -> license::LicenseInfo {
+    license::verify_license(&key)
+}
+
 // ===== Logging Setup =====
 fn setup_logging(app_dir: &std::path::Path) -> Result<(), fern::InitError> {
     let log_dir = app_dir.join("logs");
@@ -287,6 +293,7 @@ pub fn run() {
             get_thermal_snapshot,
             get_plugin_info,
             get_run_detail,
+            verify_license_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FairyBench");
