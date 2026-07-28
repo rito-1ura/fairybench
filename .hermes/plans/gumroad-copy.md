@@ -66,7 +66,7 @@ Business ライセンスの購入が必要です。
 ```
 
 ## 販売設定
-- **プラットフォーム**: Gumroad（推奨）→ gumroad.com/rito-ura
+- **プラットフォーム**: Gumroad（推奨）→ gumroad.com/rito1ura
 - **代替**: BOOTH（日本向け）→ booth.pm
 - **配送方法**: Gumroad の License Key 自動配送（推奨）または PDF ファイル添付
 - **ファイル**: 購入者に `license-key.txt` を配送
