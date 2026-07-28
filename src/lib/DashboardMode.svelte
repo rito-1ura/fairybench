@@ -405,23 +405,25 @@
       </span>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" onclick={() => onSwitch()}>
-        {@html svgs.lightning} {t('simple_mode')}
-      </button>
-      <div class="lang-toggle">
-              <button class="btn btn-xs btn-outline" onclick={() => { setLang('en'); window.location.reload() }} class:active={getLang()==='en'}>EN</button>
-              <button class="btn btn-xs btn-outline" onclick={() => { setLang('ja'); window.location.reload() }} class:active={getLang()==='ja'}>JA</button>
-              <button class="btn btn-xs btn-outline" onclick={() => { setLang('default'); window.location.reload() }} class:active={getLang()==='default'}>DEF</button>
-            </div>
-            <button class="btn btn-xs" class:btn-outline={!usageType || usageType==='personal'} class:btn-success={usageType==='business' && licenseInfo?.verified} onclick={() => showLicenseDialog = true} style="font-size:10px;white-space:nowrap">
-              {#if usageType === 'personal'}
-                Personal
-              {:else if usageType === 'business' && licenseInfo?.verified}
-                Business ✓
-              {:else}
-                License
-              {/if}
+            <button class="btn btn-outline" onclick={() => onSwitch()}>
+              {@html svgs.lightning} {t('simple_mode')}
             </button>
+            <div class="action-group">
+              <div class="lang-toggle">
+                <button class="btn btn-xs btn-outline" onclick={() => { setLang('en'); window.location.reload() }} class:active={getLang()==='en'}>EN</button>
+                <button class="btn btn-xs btn-outline" onclick={() => { setLang('ja'); window.location.reload() }} class:active={getLang()==='ja'}>JA</button>
+                <button class="btn btn-xs btn-outline" onclick={() => { setLang('default'); window.location.reload() }} class:active={getLang()==='default'}>DEF</button>
+              </div>
+              <button class="btn btn-xs" class:btn-outline={!usageType || usageType==='personal'} class:btn-success={usageType==='business' && licenseInfo?.verified} onclick={() => showLicenseDialog = true} style="font-size:10px;white-space:nowrap">
+                {#if usageType === 'personal'}
+                  Personal
+                {:else if usageType === 'business' && licenseInfo?.verified}
+                  Business ✓
+                {:else}
+                  License
+                {/if}
+              </button>
+            </div>
     </div>
   </div>
 
@@ -929,7 +931,9 @@
     color: var(--accent); cursor: pointer; transition: all .15s;
   }
   .lb-toggle-btn:hover { background: var(--bg-tertiary); }
-  .lang-toggle { display: flex; gap: 2px; margin-left: 8px; }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .action-group { display: flex; align-items: center; gap: 8px; }
+  .lang-toggle { display: flex; gap: 2px; }
   .lang-toggle .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .sidebar-body { flex: 1; overflow-y: auto; padding: 6px; }
   .lb-tabs { display: flex; gap: 2px; margin-bottom: 6px; }
