@@ -232,6 +232,11 @@ fn verify_license_key(key: String) -> license::LicenseInfo {
     license::verify_license(&key)
 }
 
+#[tauri::command]
+fn generate_license_key(priv_key: String, name: String, email: String, days: u64, tier: String) -> Result<String, String> {
+    license::generate_license(&priv_key, &name, &email, days, &tier)
+}
+
 // ===== Logging Setup =====
 fn setup_logging(app_dir: &std::path::Path) -> Result<(), fern::InitError> {
     let log_dir = app_dir.join("logs");
@@ -294,6 +299,7 @@ pub fn run() {
             get_plugin_info,
             get_run_detail,
             verify_license_key,
+            generate_license_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FairyBench");

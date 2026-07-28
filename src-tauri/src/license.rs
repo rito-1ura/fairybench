@@ -7,7 +7,7 @@
 // The public key is embedded in the binary. No network required.
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use ed25519_dalek::{Signature, Signer, Verifier, VerifyingKey};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Embedded public key (ed25519) — raw 32-byte public key, base64-encoded.
@@ -98,6 +98,28 @@ pub fn verify_license(key: &str) -> LicenseInfo {
     } else {
         rejected("Signature mismatch")
     }
+}
+
+/// Generate a license key using the developer's private key (base64).
+/// Returns the license key string.
+pub fn generate_license(priv_b64: &str, name: &str, email: &str, days: u64, tier: &str) -> Result<String, String> {
+    use ed25519_dalek::SigningKey;
+    let priv_bytes = BASE64.decode(priv_b64).map_err(|_| "Invalid base64 private key".to_string())?;
+    if priv_bytes.len() != 32 {
+        return Err("Private key must be 32 bytes".to_string());
+    }
+    let mut key = [0u8; 32];
+    key.copy_from_slice(&priv_bytes);
+    let signing_key = SigningKey::from_bytes(&key);
+
+    let expiry = SystemTime::now() + std::time::Duration::from_secs(days * 86400);
+    let ts = expiry.duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+    let payload = format!("{}:{}:{}:{}", name, email, ts, tier);
+    let sig = signing_key.sign(payload.as_bytes());
+    let mut combined = payload.into_bytes();
+    combined.extend_from_slice(&sig.to_bytes());
+    Ok(BASE64.encode(&combined))
 }
 
 fn rejected(reason: &str) -> LicenseInfo {
