@@ -68,18 +68,7 @@
     let licenseError = $state('')
     let licenseVerifying = $state(false)
 
-      // License key generation
-      let genTab = $state(false)
-      let genPrivKey = $state('')
-      let genName = $state('')
-      let genEmail = $state('')
-      let genDays = $state(365)
-      let genTier = $state('business')
-      let genResult = $state('')
-      let genError = $state('')
-      let genBusy = $state(false)
-
-      $effect(() => {
+        $effect(() => {
       const saved = localStorage.getItem('fb_usage')
       if (saved === 'personal') usageType = 'personal'
       else if (saved === 'business') {
@@ -112,24 +101,6 @@
           usageType = 'personal'
           localStorage.setItem('fb_usage', 'personal')
           showLicenseDialog = false
-        }
-
-        async function generateKey() {
-          if (!genPrivKey.trim() || !genName.trim() || !genEmail.trim()) {
-            genError = 'Fill in private key, name, and email'; return
-          }
-          genBusy = true; genError = ''; genResult = ''
-          try {
-            const key = await invoke<string>('generate_license_key', {
-              privKey: genPrivKey.trim(),
-              name: genName.trim(),
-              email: genEmail.trim(),
-              days: genDays,
-              tier: genTier,
-            })
-            genResult = key
-          } catch (e) { genError = `Generation failed: ${e}` }
-          genBusy = false
         }
 
         // Collapsible panels
@@ -849,7 +820,7 @@
   <!-- Business License Dialog -->
     {#if showLicenseDialog}
     <div class="modal-overlay" style="z-index:9999">
-      <div class="modal-content" style="max-width:500px;padding:28px">
+      <div class="modal-content" style="max-width:440px;padding:28px">
         {#if !usageType || usageType === 'personal'}
           <!-- Step 1: Choose usage type -->
           <div style="text-align:center;margin-bottom:24px">
@@ -875,61 +846,20 @@
           </div>
           <p style="font-size:11px;color:var(--text-muted);line-height:1.5;text-align:center">Personal: all features included. Business: paid license required.</p>
         {:else}
-          <!-- Tabs -->
-          <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)">
-            <button style="flex:1;padding:8px 12px;font-size:12px;font-weight:600;border:none;background:none;color:var(--text-primary);cursor:pointer;border-bottom:2px solid {!genTab ? 'var(--accent)' : 'transparent'};transition:all .15s" onclick={() => { genTab = false }}>Activate</button>
-            <button style="flex:1;padding:8px 12px;font-size:12px;font-weight:600;border:none;background:none;color:var(--text-primary);cursor:pointer;border-bottom:2px solid {genTab ? 'var(--accent)' : 'transparent'};transition:all .15s" onclick={() => { genTab = true }}>Generate</button>
+          <!-- Enter license key -->
+          <div style="text-align:center;margin-bottom:16px">
+            <h2 style="font-size:16px;font-weight:700;margin-bottom:4px">Enter License Key</h2>
+            <p style="font-size:12px;color:var(--text-muted)">Paste the key from your purchase email.</p>
           </div>
-
-          {#if !genTab}
-            <!-- Activate tab -->
-            <div style="text-align:center;margin-bottom:16px">
-              <h2 style="font-size:16px;font-weight:700;margin-bottom:4px">Enter License Key</h2>
-              <p style="font-size:12px;color:var(--text-muted)">Paste the key from your purchase email.</p>
-            </div>
-            <input style="width:100%;padding:10px 14px;font-size:13px;font-family:monospace;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);outline:none;margin-bottom:12px" type="text" placeholder="Paste license key here..." bind:value={licenseKey} />
-            {#if licenseError}<p style="font-size:12px;color:var(--red);margin-bottom:12px;text-align:center">{licenseError}</p>{/if}
-            <div style="display:flex;gap:8px;justify-content:center">
-              <button class="btn btn-outline" onclick={() => { usageType = ''; licenseKey = ''; licenseError = ''; showLicenseDialog = false }}>Cancel</button>
-              <button class="btn btn-primary" onclick={verifyLicense} disabled={licenseVerifying || !licenseKey.trim()}>
-                {licenseVerifying ? 'Verifying...' : 'Activate'}
-              </button>
-            </div>
-            <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">No key? <span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick={() => window.open('https://gumroad.com/rito1ura', '_blank')}>Purchase Business License</span></p>
-          {:else}
-            <!-- Generate tab -->
-            <div style="text-align:center;margin-bottom:16px">
-              <h2 style="font-size:16px;font-weight:700;margin-bottom:4px">Generate License Key</h2>
-              <p style="font-size:12px;color:var(--text-muted)">For developers: create a new Business license key.</p>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-              <input style="width:100%;padding:9px 12px;font-size:12px;font-family:monospace;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none" type="password" placeholder="Private key (base64)..." bind:value={genPrivKey} />
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <input style="padding:9px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none" type="text" placeholder="Name..." bind:value={genName} />
-                <input style="padding:9px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none" type="text" placeholder="Email..." bind:value={genEmail} />
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <input style="padding:9px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none" type="number" min="1" max="3650" bind:value={genDays} />
-                <select style="padding:9px 12px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);outline:none" bind:value={genTier}>
-                  <option value="business">business</option>
-                  <option value="enterprise">enterprise</option>
-                </select>
-              </div>
-            </div>
-            {#if genError}<p style="font-size:12px;color:var(--red);margin-bottom:12px;text-align:center">{genError}</p>{/if}
-            {#if genResult}
-              <div style="background:var(--bg-tertiary);border:1px solid var(--green);border-radius:8px;padding:10px 14px;margin-bottom:12px;word-break:break-all;font-size:11px;font-family:monospace;color:var(--text-primary);cursor:pointer" onclick={() => navigator.clipboard.writeText(genResult)} title="Click to copy">
-                {genResult}
-                <div style="font-size:9px;color:var(--text-muted);margin-top:4px">Click to copy ✓</div>
-              </div>
-            {/if}
-            <div style="display:flex;gap:8px;justify-content:center">
-              <button class="btn btn-outline" onclick={() => { showLicenseDialog = false }}>Close</button>
-              <button class="btn btn-primary" onclick={generateKey} disabled={genBusy}>
-                {genBusy ? 'Generating...' : 'Generate Key'}
-              </button>
-            </div>
-          {/if}
+          <input style="width:100%;padding:10px 14px;font-size:13px;font-family:monospace;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);outline:none;margin-bottom:12px" type="text" placeholder="Paste license key here..." bind:value={licenseKey} />
+          {#if licenseError}<p style="font-size:12px;color:var(--red);margin-bottom:12px;text-align:center">{licenseError}</p>{/if}
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button class="btn btn-outline" onclick={() => { usageType = ''; licenseKey = ''; licenseError = ''; showLicenseDialog = false }}>Cancel</button>
+            <button class="btn btn-primary" onclick={verifyLicense} disabled={licenseVerifying || !licenseKey.trim()}>
+              {licenseVerifying ? 'Verifying...' : 'Activate'}
+            </button>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:14px;text-align:center">No key? <span style="color:var(--accent);text-decoration:underline;cursor:pointer" onclick={() => window.open('https://gumroad.com/rito1ura', '_blank')}>Purchase Business License</span></p>
         {/if}
       </div>
     </div>
