@@ -38,68 +38,12 @@
   }
 
   // Landing page state — unused in Tauri
-  let scrolled = $state(0)
-  let visibleSections = $state<Set<string>>(new Set())
+    let scrolled = $state(0)
+    let visibleSections = $state<Set<string>>(new Set())
 
-  // Business license
-  let usageType = $state<'personal' | 'business' | ''>('')
-  let licenseKey = $state('')
-  let licenseInfo = $state<{verified:boolean; name:string; email:string; expires_at:string; tier:string} | null>(null)
-  let licenseError = $state('')
-  let licenseVerifying = $state(false)
-  let showBusinessDialog = $state(false)
-
-  $effect(() => {
-    // Restore saved usage type
-    const saved = localStorage.getItem('fb_usage')
-    if (saved === 'personal') {
-      usageType = 'personal'; showBusinessDialog = false
-    } else if (saved === 'business') {
-      usageType = 'business'
-      const savedInfo = localStorage.getItem('fb_license')
-      if (savedInfo) {
-        try {
-          const info = JSON.parse(savedInfo)
-          if (info.verified) {
-            licenseInfo = info; showBusinessDialog = false
-          } else {
-            showBusinessDialog = true
-          }
-        } catch { showBusinessDialog = true }
-      } else {
-        showBusinessDialog = true
-      }
-    } else if (!isTauri) {
-      usageType = 'personal' // web visitors are personal
-    } else {
-      showBusinessDialog = true
-    }
-  })
-
-  async function verifyLicense() {
-    if (!licenseKey.trim()) return
-    licenseVerifying = true; licenseError = ''
-    try {
-      const { invoke } = await import('@tauri-apps/api/core')
-      const info = await invoke<{verified:boolean; name:string; email:string; expires_at:string; tier:string}>('verify_license_key', { key: licenseKey.trim() })
-      if (info.verified) {
-        licenseInfo = info
-        licenseError = ''
-        localStorage.setItem('fb_usage', 'business')
-        localStorage.setItem('fb_license', JSON.stringify(info))
-        showBusinessDialog = false
-      } else {
-        licenseError = `Invalid license: ${info.expires_at}`
-      }
-    } catch (e) {
-      licenseError = `Verification failed: ${e}`
-    }
-    licenseVerifying = false
-  }
-
-  $effect(() => {
-    if (isTauri) return
-    document.documentElement.style.overflow = 'auto'
+    $effect(() => {
+        if (isTauri) return
+        document.documentElement.style.overflow = 'auto'
     document.documentElement.style.height = 'auto'
     document.body.style.overflow = 'auto'
     document.body.style.height = 'auto'
@@ -254,58 +198,9 @@
       },
     },
   }
-</script>
+  </script>
 
-<!-- Business License Dialog (Tauri only) -->
-{#if isTauri && showBusinessDialog}
-<div class="modal-overlay" style="z-index:9999">
-  <div class="modal-content" style="max-width:440px;padding:32px">
-    {#if usageType === ''}
-      <!-- Step 1: Choose usage type -->
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(129,140,248,.12);padding:4px 14px;border-radius:6px;display:inline-block;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">FairyBench</div>
-        <h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Select Usage Type</h2>
-        <p style="font-size:12px;color:var(--text-muted)">Choose how you will use this software.</p>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-        <button class="btn btn-outline" style="justify-content:flex-start;padding:12px 16px;gap:12px;height:auto" onclick={() => { usageType = 'personal'; localStorage.setItem('fb_usage', 'personal'); showBusinessDialog = false }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <div style="text-align:left">
-            <div style="font-weight:600;color:var(--text-primary)">Personal</div>
-            <div style="font-size:11px;color:var(--text-muted)">Free, non-commercial use</div>
-          </div>
-        </button>
-        <button class="btn btn-outline" style="justify-content:flex-start;padding:12px 16px;gap:12px;height:auto" onclick={() => usageType = 'business'}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          <div style="text-align:left">
-            <div style="font-weight:600;color:var(--text-primary)">Business</div>
-            <div style="font-size:11px;color:var(--text-muted)">Requires license key — priority support</div>
-          </div>
-        </button>
-      </div>
-      <p style="font-size:11px;color:var(--text-muted);line-height:1.5;text-align:center">Personal: all features included. Business: paid license required.</p>
-    {:else if usageType === 'business' && !licenseInfo?.verified}
-      <!-- Step 2: Enter license key -->
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(129,140,248,.12);padding:4px 14px;border-radius:6px;display:inline-block;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">Business License</div>
-        <h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Enter License Key</h2>
-        <p style="font-size:12px;color:var(--text-muted)">Paste the key from your purchase email.</p>
-      </div>
-      <input style="width:100%;padding:10px 14px;font-size:13px;font-family:monospace;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);outline:none;margin-bottom:12px" type="text" placeholder="Paste license key here..." bind:value={licenseKey} onfocus={e => e.target.style.borderColor = 'var(--accent)'} onblur={e => e.target.style.borderColor = 'var(--border)'} />
-      {#if licenseError}<p style="font-size:12px;color:var(--red);margin-bottom:12px">{licenseError}</p>{/if}
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button class="btn btn-outline" onclick={() => { usageType = ''; licenseKey = ''; licenseError = '' }}>Back</button>
-        <button class="btn btn-primary" onclick={verifyLicense} disabled={licenseVerifying || !licenseKey.trim()}>
-          {licenseVerifying ? 'Verifying...' : 'Activate License'}
-        </button>
-      </div>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:16px;text-align:center">No key? <a href="https://gumroad.com/rito-ura" target="_blank" style="color:var(--accent);text-decoration:none">Purchase Business License</a></p>
-    {/if}
-  </div>
-</div>
-{/if}
-
-{#if !isTauri}
+  {#if !isTauri}
 <!-- ═══════════════════════════════════════ LANDING PAGE ═══════════════════════════════════════ -->
 <div class="lp">
 

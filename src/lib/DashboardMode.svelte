@@ -60,7 +60,50 @@
   let scoreAnimTimers: ReturnType<typeof setInterval>[] = []
   let destroyed = false
 
-  // Collapsible panels
+    // Business license
+    let showLicenseDialog = $state(false)
+    let usageType = $state<'personal' | 'business' | ''>('')
+    let licenseKey = $state('')
+    let licenseInfo = $state<{verified:boolean; name:string; email:string; expires_at:string; tier:string} | null>(null)
+    let licenseError = $state('')
+    let licenseVerifying = $state(false)
+
+    $effect(() => {
+      const saved = localStorage.getItem('fb_usage')
+      if (saved === 'personal') usageType = 'personal'
+      else if (saved === 'business') {
+        usageType = 'business'
+        try {
+          const info = JSON.parse(localStorage.getItem('fb_license') || '{}')
+          if (info.verified) licenseInfo = info
+        } catch { /* ignore */ }
+      }
+    })
+
+    async function verifyLicense() {
+      if (!licenseKey.trim()) return
+      licenseVerifying = true; licenseError = ''
+      try {
+        const info = await invoke<{verified:boolean; name:string; email:string; expires_at:string; tier:string}>('verify_license_key', { key: licenseKey.trim() })
+        if (info.verified) {
+          licenseInfo = info; licenseError = ''
+          localStorage.setItem('fb_usage', 'business')
+          localStorage.setItem('fb_license', JSON.stringify(info))
+          showLicenseDialog = false
+        } else {
+          licenseError = `Invalid: ${info.expires_at}`
+        }
+      } catch (e) { licenseError = `Error: ${e}` }
+      licenseVerifying = false
+    }
+
+    function setUsagePersonal() {
+      usageType = 'personal'
+      localStorage.setItem('fb_usage', 'personal')
+      showLicenseDialog = false
+    }
+
+    // Collapsible panels
   let lbCollapsed = $state(false)
   let showStatsPanel = $state(false)
   let onlineLb = $state<{score:number; cpu_name:string; gpu_name:string; timestamp:string}[]>([])
@@ -366,10 +409,19 @@
         {@html svgs.lightning} {t('simple_mode')}
       </button>
       <div class="lang-toggle">
-        <button class="btn btn-xs btn-outline" onclick={() => { setLang('en'); window.location.reload() }} class:active={getLang()==='en'}>EN</button>
-        <button class="btn btn-xs btn-outline" onclick={() => { setLang('ja'); window.location.reload() }} class:active={getLang()==='ja'}>JA</button>
-        <button class="btn btn-xs btn-outline" onclick={() => { setLang('default'); window.location.reload() }} class:active={getLang()==='default'}>DEF</button>
-      </div>
+              <button class="btn btn-xs btn-outline" onclick={() => { setLang('en'); window.location.reload() }} class:active={getLang()==='en'}>EN</button>
+              <button class="btn btn-xs btn-outline" onclick={() => { setLang('ja'); window.location.reload() }} class:active={getLang()==='ja'}>JA</button>
+              <button class="btn btn-xs btn-outline" onclick={() => { setLang('default'); window.location.reload() }} class:active={getLang()==='default'}>DEF</button>
+            </div>
+            <button class="btn btn-xs" class:btn-outline={!usageType || usageType==='personal'} class:btn-success={usageType==='business' && licenseInfo?.verified} onclick={() => showLicenseDialog = true} style="font-size:10px;white-space:nowrap">
+              {#if usageType === 'personal'}
+                Personal
+              {:else if usageType === 'business' && licenseInfo?.verified}
+                Business ✓
+              {:else}
+                License
+              {/if}
+            </button>
     </div>
   </div>
 
@@ -761,9 +813,58 @@
       </div>
     </div>
   </div>
-{/if}
+  {/if}
 
-<style>
+  <!-- Business License Dialog -->
+  {#if showLicenseDialog}
+  <div class="modal-overlay" style="z-index:9999">
+    <div class="modal-content" style="max-width:440px;padding:32px">
+      {#if !usageType || usageType === 'personal'}
+        <!-- Step 1: Choose usage type -->
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(129,140,248,.12);padding:4px 14px;border-radius:6px;display:inline-block;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">FairyBench</div>
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Select Usage Type</h2>
+          <p style="font-size:12px;color:var(--text-muted)">Choose how you will use this software.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+          <button class="btn btn-outline" style="justify-content:flex-start;padding:12px 16px;gap:12px;height:auto" onclick={setUsagePersonal}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <div style="text-align:left">
+              <div style="font-weight:600;color:var(--text-primary)">Personal</div>
+              <div style="font-size:11px;color:var(--text-muted)">Free, non-commercial use</div>
+            </div>
+          </button>
+          <button class="btn btn-outline" style="justify-content:flex-start;padding:12px 16px;gap:12px;height:auto" onclick={() => usageType = 'business'}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;flex-shrink:0;color:var(--accent)"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <div style="text-align:left">
+              <div style="font-weight:600;color:var(--text-primary)">Business</div>
+              <div style="font-size:11px;color:var(--text-muted)">Requires license key — priority support</div>
+            </div>
+          </button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.5;text-align:center">Personal: all features included. Business: paid license required.</p>
+      {:else}
+        <!-- Step 2: Enter license key -->
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(129,140,248,.12);padding:4px 14px;border-radius:6px;display:inline-block;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px">Business License</div>
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Enter License Key</h2>
+          <p style="font-size:12px;color:var(--text-muted)">Paste the key from your purchase email.</p>
+        </div>
+        <input style="width:100%;padding:10px 14px;font-size:13px;font-family:monospace;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);outline:none;margin-bottom:12px" type="text" placeholder="Paste license key here..." bind:value={licenseKey} />
+        {#if licenseError}<p style="font-size:12px;color:var(--red);margin-bottom:12px">{licenseError}</p>{/if}
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-outline" onclick={() => { usageType = ''; licenseKey = ''; licenseError = ''; showLicenseDialog = false }}>Cancel</button>
+          <button class="btn btn-primary" onclick={verifyLicense} disabled={licenseVerifying || !licenseKey.trim()}>
+            {licenseVerifying ? 'Verifying...' : 'Activate License'}
+          </button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:16px;text-align:center">No key? <a href="https://gumroad.com/rito-ura" target="_blank" style="color:var(--accent);text-decoration:none">Purchase Business License</a></p>
+      {/if}
+    </div>
+  </div>
+  {/if}
+
+  <style>
   .dashboard {
     display: flex; flex-direction: column; height: 100vh;
     padding: 16px 20px 16px;
