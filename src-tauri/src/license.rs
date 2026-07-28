@@ -15,7 +15,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 ///   openssl genpkey -algorithm ed25519 -out private.pem
 ///   openssl pkey -in private.pem -pubout -out public.der
 /// Or use ed25519-dalek's generate() in a helper binary.
-const PUBLIC_KEY_BASE64: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; // placeholder only
+const PUBLIC_KEY_BASE64: &str = "EAB5SKvTeqVhsH04ZHARG/183rr6E8BwZB1ygiCIMHg=";
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LicenseInfo {
